@@ -13,3 +13,8 @@ type Deal struct {
 	AccountBPay  float64
 	AccountBKind string
 }
+
+type Bank struct {
+	Account string
+	Amount  float64
+}

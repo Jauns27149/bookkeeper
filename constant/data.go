@@ -1,7 +1,7 @@
 package constant
 
 const (
-	Accounts    = "Accounts"
+	Accounts    = "accounts"
 	Income      = "Income"
 	Assets      = "Assets"
 	Expenses    = "Expenses"
@@ -9,4 +9,6 @@ const (
 	Liabilities = "Liabilities"
 )
 
-var AccountsList = []string{Income, Assets, Expenses, Equity, Liabilities}
+var (
+	Period = "period"
+)
