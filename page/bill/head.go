@@ -16,7 +16,7 @@ type Head struct {
 
 func NewHead() *Head {
 	return &Head{
-		gather:  NewGather(),
+		gather:  component.NewGather(),
 		account: NewAccount(),
 		date:    component.NewDate().Content(),
 	}

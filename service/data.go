@@ -8,22 +8,24 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/data/binding"
 	"log"
-	"math"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 )
 
-var DataService *Data
-
 type Data struct {
 	Pref      fyne.Preferences
 	Deals     []model.Deal
-	Income    binding.Float
-	Expense   binding.Float
-	Liability binding.Float
+	Income    binding.String
+	Expense   binding.String
+	Liability binding.String
 	Payees    []string
 	Accounts  binding.StringList
+
+	Start       binding.String
+	End         binding.String
+	AccountType binding.String
 }
 
 func (d *Data) count() {
@@ -45,9 +47,18 @@ func (d *Data) count() {
 		compute(deal.AccountB, deal.AccountBPay)
 	}
 
-	d.Expense.Set(math.Round(expense*100) / 100)
-	d.Income.Set(-math.Round(income*100) / 100)
-	d.Liability.Set(-math.Round(liability*100) / 100)
+	err := d.Expense.Set(strconv.FormatFloat(expense, 'f', 2, 64))
+	if err != nil {
+		log.Panicln(err.Error())
+	}
+	err = d.Income.Set(strconv.FormatFloat(-income, 'f', 2, 64))
+	if err != nil {
+		log.Panicln(err.Error())
+	}
+	err = d.Liability.Set(strconv.FormatFloat(-liability, 'f', 2, 64))
+	if err != nil {
+		log.Panicln(err.Error())
+	}
 }
 
 func (d *Data) payees() {
@@ -90,7 +101,6 @@ func (d *Data) accounts() {
 }
 
 func (d *Data) Refresh() {
-	d.GetDeals("")
 	DataService.count()
 	DataService.payees()
 	DataService.accounts()
@@ -103,7 +113,12 @@ func (d *Data) RefreshPage() {
 
 func (d *Data) Save(deal model.Deal) {
 	key := deal.Date.Format("2006-01")
-	list := append(d.Pref.StringList(key), convert.DealToString(deal))
+	datas := d.Pref.StringList(key)
+	if len(datas) == 0 {
+		periods := d.Pref.StringList(constant.Period)
+		d.Pref.SetStringList(constant.Period, append(periods, key))
+	}
+	list := append(datas, convert.DealToString(deal))
 	d.Pref.SetStringList(key, list)
 	d.Refresh()
 	log.Printf("sava deal success, month %v, amount %v", key, len(list))
@@ -133,10 +148,10 @@ func (d *Data) RemoveDeal(deal model.Deal) {
 	for i, vv := range items {
 		if vv == target {
 			d.Pref.SetStringList(key, append(items[:i], items[i+1:]...))
+			log.Printf("remove deal %s success", target)
 		}
 	}
 	d.Refresh()
-	log.Printf("remove deal %s success", target)
 }
 
 func (d *Data) ChangeDataByPeriod(start time.Time, end time.Time) {
@@ -151,39 +166,101 @@ func (d *Data) ChangeDataByPeriod(start time.Time, end time.Time) {
 			if deal.Date.After(start) && deal.Date.Before(end) {
 				newData = append(newData, deal)
 			}
+
 		}
 		temp = temp.AddDate(0, 1, 0)
 	}
 
 	util.SortByDate(newData)
 	d.Deals = newData
+	d.count()
+
+	d.RefreshPage()
 	log.Println("change current data success")
 }
 
-func (d *Data) FilterDataByAccount(account string) {
-	newData := make([]model.Deal, 0)
-	for _, deal := range d.Deals {
-		if strings.Contains(deal.AccountA, account) || strings.Contains(deal.AccountB, account) {
-			newData = append(newData, deal)
+func (d *Data) LoadData() {
+	startBind, err := d.Start.Get()
+	if err != nil {
+		log.Panicln(err.Error())
+	}
+	start, err := time.Parse(constant.FyneDate, startBind)
+	endBind, err := d.End.Get()
+	if err != nil {
+		log.Panicln(err.Error())
+	}
+	end, err := time.Parse(constant.FyneDate, endBind)
+	if err != nil {
+		log.Panicln(err.Error())
+	}
+	pref, deals := d.Pref, make([]model.Deal, 0)
+	start = time.Date(start.Year(), start.Month(), start.Day(), 0, 0, 0, 0, start.Location())
+
+	for ; !start.After(end); start = start.AddDate(0, 1, 0) {
+		for _, v := range pref.StringList(start.Format("2006-01")) {
+			deal := convert.StringToDeal(v)
+			account, err := d.AccountType.Get()
+			if err != nil {
+				log.Panicln(err.Error())
+			}
+			if !deal.Date.Before(start) && !deal.Date.After(end) && util.CheckAccount(deal, account) {
+				deals = append(deals, deal)
+			}
 		}
 	}
-	util.SortByDate(newData)
-	d.Deals = newData
+	util.SortByDate(deals)
+	d.Deals = deals
+
+	d.count()
 	d.RefreshPage()
-	log.Println("filter data success")
+	log.Println("load data finished")
+}
+func (d *Data) AllData() {
+	list := d.Pref.StringList(constant.Period)
+	sort.Strings(list)
+	start, err := time.Parse("2006-01", list[0])
+	if err != nil {
+		log.Println(err.Error())
+	}
+	end, err := time.Parse("2006-01", list[len(list)-1])
+	if err != nil {
+		log.Println(err.Error())
+	}
+	d.ChangeDataByPeriod(start, end)
 }
 
-func DataRun() {
+func NewData() *Data {
 	pref := fyne.CurrentApp().Preferences()
-	DataService = &Data{
-		Pref:      pref,
-		Deals:     make([]model.Deal, 0),
-		Income:    binding.NewFloat(),
-		Expense:   binding.NewFloat(),
-		Liability: binding.NewFloat(),
-		Accounts:  binding.NewStringList(),
+	now := time.Now()
+	accountType := binding.NewString()
+	err := accountType.Set(constant.All)
+	if err != nil {
+		log.Panicln(err.Error())
+	}
+	start := binding.NewString()
+	err = start.Set(time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.Local).Format(constant.FyneDate))
+	if err != nil {
+		log.Panicln(err.Error())
+	}
+	end := binding.NewString()
+	err = end.Set(now.Format(constant.FyneDate))
+	if err != nil {
+		log.Panicln(err.Error())
 	}
 
-	DataService.GetDeals("")
-	DataService.Refresh()
+	data := &Data{
+		Pref:      pref,
+		Deals:     make([]model.Deal, 0),
+		Income:    binding.NewString(),
+		Expense:   binding.NewString(),
+		Liability: binding.NewString(),
+		Accounts:  binding.NewStringList(),
+
+		Start:       start,
+		End:         end,
+		AccountType: accountType,
+	}
+	data.LoadData()
+
+	return data
 }

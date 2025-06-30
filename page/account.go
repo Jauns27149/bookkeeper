@@ -38,6 +38,7 @@ func (a *Account) Content() fyne.CanvasObject {
 	}
 	top := container.NewGridWithColumns(len(a.categorization), objects...)
 
+	a.current = 3
 	a.categorization[a.current].Disable()
 	content = container.NewBorder(top, nil, nil, nil, a.subContents[a.current])
 	return content

@@ -2,7 +2,6 @@ package page
 
 import (
 	"bookkeeper/constant"
-	"bookkeeper/page/bill"
 	"bookkeeper/page/statistic"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
@@ -16,8 +15,8 @@ type Index struct {
 
 func (i *Index) Content() fyne.CanvasObject {
 	var content *fyne.Container
-
 	contentMap := make(map[string]fyne.CanvasObject, len(i.bottom.Items))
+
 	for ii := range len(contentMap) {
 		contentMap[i.bottom.Items[ii]] = i.components[ii]
 	}
@@ -49,7 +48,7 @@ func NewIndex() *Index {
 	return &Index{
 		bottom: NewBottom(texts),
 		components: []fyne.CanvasObject{
-			bill.NewBill().Content(),
+			NewBill().Content(),
 			statistic.NewStatistic().Content(),
 			NewAccount().Content(),
 		},

@@ -25,9 +25,9 @@ func DealToString(deal model.Deal) string {
 		deal.Payee,
 		deal.Usage,
 		deal.AccountA,
-		strconv.FormatFloat(deal.AccountAPay, 'f', -1, 64), deal.AccountAKind,
+		strconv.FormatFloat(deal.AccountAPay, 'f', 2, 64), deal.AccountAKind,
 		deal.AccountB,
-		strconv.FormatFloat(deal.AccountBPay, 'f', -1, 64), deal.AccountBKind,
+		strconv.FormatFloat(deal.AccountBPay, 'f', 2, 64), deal.AccountBKind,
 	}
 	return strings.Join(rowData, " ")
 }

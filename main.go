@@ -14,20 +14,8 @@ func main() {
 	w := a.NewWindow("bookkeeper")
 
 	// 初始化数据
-	service.DataRun()
-	service.StatisticRun()
 	service.Boot()
-
-	//a.Preferences().SetStringList(constant.Period, []string{
-	//	"2024-11",
-	//	"2024-12",
-	//	"2025-01",
-	//	"2025-02",
-	//	"2025-03",
-	//	"2025-04",
-	//	"2025-05",
-	//	"2025-06",
-	//})
+	service.StatisticRun()
 
 	w.Resize(fyne.NewSize(600, 500))
 	w.SetContent(page.NewIndex().Content())

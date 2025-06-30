@@ -1,4 +1,4 @@
-package bill
+package component
 
 import (
 	"bookkeeper/constant"
@@ -12,6 +12,8 @@ import (
 	"strconv"
 	"time"
 )
+
+var updateItem = make(chan model.Deal, 1)
 
 type Record struct {
 	button  *widget.Button

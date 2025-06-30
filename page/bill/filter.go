@@ -9,7 +9,6 @@ import (
 )
 
 type Filter struct {
-	content *widget.Select
 }
 
 func NewFilter() *Filter {
@@ -17,21 +16,13 @@ func NewFilter() *Filter {
 }
 
 func (f *Filter) Content() fyne.CanvasObject {
-	if f.content != nil {
-		return f.content
-	}
 	accounts, err := service.DataService.Accounts.Get()
 	if err != nil {
 		log.Println(err)
 	}
 	accounts = append(accounts, constant.AccountPrefixes...)
-	prefix := widget.NewSelect(accounts, func(account string) {
-		service.DataService.FilterDataByAccount(account)
-		//f.data.GetDeals(s)
-		//f.data.RefreshPage()
-	})
-	prefix.SetSelected("")
+	prefix := widget.NewSelectWithData(accounts, service.DataService.AccountType)
+	prefix.SetSelected(constant.All)
 
-	f.content = prefix
-	return f.content
+	return prefix
 }
