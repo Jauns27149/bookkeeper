@@ -17,9 +17,14 @@ type Account struct {
 	subContents    []fyne.CanvasObject
 	categorization []*widget.Button
 	current        int
+
+	content fyne.CanvasObject
 }
 
 func (a *Account) Content() fyne.CanvasObject {
+	if a.content != nil {
+		return a.content
+	}
 	var content *fyne.Container
 	for i, button := range a.categorization {
 		ii := i
@@ -40,8 +45,8 @@ func (a *Account) Content() fyne.CanvasObject {
 
 	a.current = 3
 	a.categorization[a.current].Disable()
-	content = container.NewBorder(top, nil, nil, nil, a.subContents[a.current])
-	return content
+	a.content = container.NewBorder(top, nil, nil, nil, a.subContents[a.current])
+	return a.content
 }
 
 func NewAccount() *Account {

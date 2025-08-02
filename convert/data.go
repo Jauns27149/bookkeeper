@@ -1,6 +1,7 @@
 package convert
 
 import (
+	"bookkeeper/constant"
 	"bookkeeper/model"
 	"github.com/wcharczuk/go-chart"
 	"log"
@@ -24,12 +25,12 @@ func DealToString(deal model.Deal) string {
 		deal.Date.Format(time.DateOnly),
 		deal.Payee,
 		deal.Usage,
-		deal.AccountA,
-		strconv.FormatFloat(deal.AccountAPay, 'f', 2, 64), deal.AccountAKind,
-		deal.AccountB,
-		strconv.FormatFloat(deal.AccountBPay, 'f', 2, 64), deal.AccountBKind,
+		deal.Payment.Name,
+		strconv.FormatFloat(deal.Payment.Cost, 'f', 2, 64), deal.Payment.Kind,
+		deal.Receiver.Name,
+		strconv.FormatFloat(deal.Receiver.Cost, 'f', 2, 64), deal.Receiver.Kind,
 	}
-	return strings.Join(rowData, " ")
+	return strings.Join(rowData, constant.Comma)
 }
 
 func MapToBank(accountMap map[string]float64) []model.Bank {
@@ -44,22 +45,18 @@ func MapToBank(accountMap map[string]float64) []model.Bank {
 }
 
 func StringToDeal(row string) model.Deal {
-	d := strings.Split(row, " ")
-	if len(d) < 9 {
+	d := strings.Split(row, constant.Comma)
+	if len(d) != 9 {
 		log.Panicln(d)
 	}
 	date, _ := time.Parse(time.DateOnly, d[0])
 	payA, _ := strconv.ParseFloat(d[4], 64)
 	payB, _ := strconv.ParseFloat(d[7], 64)
 	return model.Deal{
-		Date:         date,
-		Payee:        d[1],
-		Usage:        d[2],
-		AccountA:     d[3],
-		AccountAPay:  payA,
-		AccountAKind: d[5],
-		AccountB:     d[6],
-		AccountBPay:  payB,
-		AccountBKind: d[8],
+		Date:     date,
+		Payee:    d[1],
+		Usage:    d[2],
+		Payment:  model.Account{Name: d[3], Cost: payA, Kind: d[5]},
+		Receiver: model.Account{Name: d[6], Cost: payB, Kind: d[8]},
 	}
 }

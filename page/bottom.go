@@ -1,6 +1,7 @@
 package page
 
 import (
+	"bookkeeper/constant"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
@@ -19,7 +20,13 @@ func (b *Bottom) Content() fyne.CanvasObject {
 	return container.NewGridWithColumns(len(objects), objects...)
 }
 
-func NewBottom(items []string) *Bottom {
+func NewBottom() *Bottom {
+	items := []string{
+		constant.Bill,
+		//constant.tally,
+		constant.Statistic,
+		constant.Account,
+	}
 	buttons := make([]*widget.Button, len(items))
 	for i, item := range items {
 		buttons[i] = widget.NewButton(item, func() {})

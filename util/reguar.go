@@ -37,5 +37,10 @@ func GroupAccountByPrefix(accounts []model.Bank) map[string][]model.Bank {
 
 func CheckAccount(deal model.Deal, accountType string) bool {
 	reg := regexp.MustCompile(accountType)
-	return reg.MatchString(deal.AccountA + deal.AccountB)
+	return reg.MatchString("")
+}
+
+func LastAccount(s string) string {
+	reg := regexp.MustCompile("[^:]+$")
+	return reg.FindString(s)
 }

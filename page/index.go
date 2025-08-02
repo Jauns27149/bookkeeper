@@ -2,55 +2,70 @@ package page
 
 import (
 	"bookkeeper/constant"
-	"bookkeeper/page/statistic"
+	"bookkeeper/service"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/widget"
 )
 
 type Index struct {
-	bottom     *Bottom
-	components []fyne.CanvasObject
-	current    int
+	bill    service.Component
+	tally   service.Component
+	account service.Component
+
+	current int
 }
 
 func (i *Index) Content() fyne.CanvasObject {
+	texts := []string{constant.Bill, constant.Tally, constant.Account}
+	components := []service.Component{i.bill, i.tally, i.account}
+	buttons := make([]*widget.Button, len(texts))
 	var content *fyne.Container
-	contentMap := make(map[string]fyne.CanvasObject, len(i.bottom.Items))
-
-	for ii := range len(contentMap) {
-		contentMap[i.bottom.Items[ii]] = i.components[ii]
-	}
-	for ii, button := range i.bottom.Buttons {
+	for ii, text := range texts {
 		iii := ii
-		button.OnTapped = func() {
-			content.Remove(i.components[i.current])
-			content.Add(i.components[iii])
-			i.bottom.Buttons[iii].Disable()
-			i.bottom.Buttons[i.current].Enable()
+		buttons[ii] = widget.NewButton(text, func() {
+			content.Remove(components[i.current].Content())
+			buttons[i.current].Enable()
 			i.current = iii
-		}
+			content.Add(components[iii].Content())
+			components[iii].Content().Refresh()
+			buttons[iii].Disable()
+		})
 	}
 
-	i.bottom.Buttons[i.current].Disable()
-	bottom := i.bottom.Content()
-	object := i.components[i.current]
-	content = container.NewBorder(nil, bottom, nil, nil, object)
+	subContent := components[i.current].Content()
+	bottom := container.NewGridWithColumns(len(components))
+	for _, button := range buttons {
+		bottom.Add(button)
+	}
+	content = container.NewBorder(nil, bottom, nil, nil, subContent)
+
+	go i.listener(buttons)
 	return content
 }
 
-func NewIndex() *Index {
-	texts := []string{
-		constant.Bill,
-		constant.Statistic,
-		constant.Account,
+func (i *Index) listener(buttons []*widget.Button) {
+	for {
+		select {
+		case key := <-service.TallyService.Finish:
+			var index int
+			switch key {
+			case constant.Bill:
+				index = 0
+			case constant.Tally:
+				index = 1
+			}
+			fyne.Do(func() {
+				buttons[index].OnTapped()
+			})
+		}
 	}
+}
 
+func NewIndex() *Index {
 	return &Index{
-		bottom: NewBottom(texts),
-		components: []fyne.CanvasObject{
-			NewBill().Content(),
-			statistic.NewStatistic().Content(),
-			NewAccount().Content(),
-		},
+		bill:    NewBill(),
+		tally:   NewTally(),
+		account: NewAccount(),
 	}
 }

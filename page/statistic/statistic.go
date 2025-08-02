@@ -1,15 +1,15 @@
 package statistic
 
 import (
-	"bookkeeper/intf"
+	"bookkeeper/service"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 )
 
 type Statistic struct {
 	content fyne.CanvasObject
-	pie     intf.Component
-	items   intf.Component
+	pie     service.Component
+	items   service.Component
 }
 
 func NewStatistic() *Statistic {

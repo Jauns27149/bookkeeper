@@ -15,6 +15,8 @@ import (
 )
 
 type Data struct {
+	Period binding.Item[[2]time.Time]
+
 	Pref      fyne.Preferences
 	Deals     []model.Deal
 	Income    binding.String
@@ -23,9 +25,15 @@ type Data struct {
 	Payees    []string
 	Accounts  binding.StringList
 
-	Start       binding.String
-	End         binding.String
 	AccountType binding.String
+
+	Statements []model.Statement
+	tally
+}
+
+type tally struct {
+	Payee   binding.String
+	Utilize binding.String
 }
 
 func (d *Data) count() {
@@ -43,8 +51,8 @@ func (d *Data) count() {
 	}
 
 	for _, deal := range d.Deals {
-		compute(deal.AccountA, deal.AccountAPay)
-		compute(deal.AccountB, deal.AccountBPay)
+		compute(deal.Payment.Name, deal.Payment.Cost)
+		compute(deal.Receiver.Name, deal.Receiver.Cost)
 	}
 
 	err := d.Expense.Set(strconv.FormatFloat(expense, 'f', 2, 64))
@@ -87,8 +95,8 @@ func (d *Data) accounts() {
 		m[account]++
 	}
 	for _, v := range d.Deals {
-		accountCount(v.AccountA)
-		accountCount(v.AccountB)
+		accountCount(v.Payment.Name)
+		accountCount(v.Receiver.Name)
 	}
 
 	sort.Slice(accounts, func(i, j int) bool {
@@ -111,7 +119,7 @@ func (d *Data) RefreshPage() {
 	fyne.CurrentApp().Driver().AllWindows()[0].Content().Refresh()
 }
 
-func (d *Data) Save(deal model.Deal) {
+func (d *Data) Add(deal model.Deal) {
 	key := deal.Date.Format("2006-01")
 	datas := d.Pref.StringList(key)
 	if len(datas) == 0 {
@@ -121,6 +129,7 @@ func (d *Data) Save(deal model.Deal) {
 	list := append(datas, convert.DealToString(deal))
 	d.Pref.SetStringList(key, list)
 	d.Refresh()
+	TallyService.Finish <- constant.Bill
 	log.Printf("sava deal success, month %v, amount %v", key, len(list))
 }
 
@@ -180,22 +189,13 @@ func (d *Data) ChangeDataByPeriod(start time.Time, end time.Time) {
 }
 
 func (d *Data) LoadData() {
-	startBind, err := d.Start.Get()
+	period, err := d.Period.Get()
 	if err != nil {
-		log.Panicln(err.Error())
+		log.Panicln(err)
 	}
-	start, err := time.Parse(constant.FyneDate, startBind)
-	endBind, err := d.End.Get()
-	if err != nil {
-		log.Panicln(err.Error())
-	}
-	end, err := time.Parse(constant.FyneDate, endBind)
-	if err != nil {
-		log.Panicln(err.Error())
-	}
-	pref, deals := d.Pref, make([]model.Deal, 0)
-	start = time.Date(start.Year(), start.Month(), start.Day(), 0, 0, 0, 0, start.Location())
+	start, end := period[0], period[1]
 
+	pref, deals := d.Pref, make([]model.Deal, 0)
 	for ; !start.After(end); start = start.AddDate(0, 1, 0) {
 		for _, v := range pref.StringList(start.Format("2006-01")) {
 			deal := convert.StringToDeal(v)
@@ -211,22 +211,26 @@ func (d *Data) LoadData() {
 	util.SortByDate(deals)
 	d.Deals = deals
 
+	m := make(map[time.Time][]model.Deal)
+	for _, v := range d.Deals {
+		if _, ok := m[v.Date]; ok {
+			m[v.Date] = append(m[v.Date], v)
+		} else {
+			m[v.Date] = []model.Deal{v}
+		}
+	}
+	s := make([]model.Statement, 0, len(m))
+	for k, v := range m {
+		s = append(s, model.Statement{Date: k, Deals: v})
+	}
+	sort.Slice(s, func(i, j int) bool {
+		return s[i].Date.After(s[j].Date)
+	})
+	d.Statements = s
+
 	d.count()
 	d.RefreshPage()
 	log.Println("load data finished")
-}
-func (d *Data) AllData() {
-	list := d.Pref.StringList(constant.Period)
-	sort.Strings(list)
-	start, err := time.Parse("2006-01", list[0])
-	if err != nil {
-		log.Println(err.Error())
-	}
-	end, err := time.Parse("2006-01", list[len(list)-1])
-	if err != nil {
-		log.Println(err.Error())
-	}
-	d.ChangeDataByPeriod(start, end)
 }
 
 func NewData() *Data {
@@ -237,18 +241,20 @@ func NewData() *Data {
 	if err != nil {
 		log.Panicln(err.Error())
 	}
-	start := binding.NewString()
-	err = start.Set(time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.Local).Format(constant.FyneDate))
+
+	period := binding.NewItem(func(t [2]time.Time, t2 [2]time.Time) bool {
+		return t == t2
+	})
+	err = period.Set([2]time.Time{
+		time.Date(now.Year(), now.Month()-3, 1, 0, 0, 0, 0, time.Local),
+		time.Date(now.Year(), now.Month()+1, 0, 0, 0, 0, 0, time.Local),
+	})
 	if err != nil {
-		log.Panicln(err.Error())
-	}
-	end := binding.NewString()
-	err = end.Set(now.Format(constant.FyneDate))
-	if err != nil {
-		log.Panicln(err.Error())
+		log.Panicln(err)
 	}
 
 	data := &Data{
+		Period:    period,
 		Pref:      pref,
 		Deals:     make([]model.Deal, 0),
 		Income:    binding.NewString(),
@@ -256,8 +262,6 @@ func NewData() *Data {
 		Liability: binding.NewString(),
 		Accounts:  binding.NewStringList(),
 
-		Start:       start,
-		End:         end,
 		AccountType: accountType,
 	}
 	data.LoadData()

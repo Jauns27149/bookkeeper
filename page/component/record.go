@@ -74,15 +74,11 @@ func NewRecord() *Record {
 			costA, _ := strconv.ParseFloat(amounts[0].Text, 64)
 			costB, _ := strconv.ParseFloat(amounts[1].Text, 64)
 			deal := model.Deal{
-				Date:         *dateEntry.Date,
-				Payee:        payee.Text,
-				Usage:        detail.Text,
-				AccountA:     accountSelect[0].Selected,
-				AccountAPay:  costA,
-				AccountAKind: "CNY",
-				AccountB:     accountSelect[1].Selected,
-				AccountBPay:  costB,
-				AccountBKind: "CNY",
+				Date:     *dateEntry.Date,
+				Payee:    payee.Text,
+				Usage:    detail.Text,
+				Payment:  model.Account{Name: accountSelect[0].Selected, Cost: costA, Kind: "CNY"},
+				Receiver: model.Account{Name: accountSelect[1].Selected, Cost: costB, Kind: "CNY"},
 			}
 
 			amounts[0].SetText("")
@@ -92,7 +88,7 @@ func NewRecord() *Record {
 			box.Hide()
 			data.GetDeals("")
 			data.Deals = append(data.Deals, deal)
-			data.Save(deal)
+			data.Add(deal)
 			data.RefreshPage()
 		}
 		acc := container.NewGridWithColumns(2)
@@ -124,10 +120,10 @@ func NewRecord() *Record {
 				dateEntry.SetDate(&item.Date)
 				payee.SetText(item.Payee)
 				detail.SetText(item.Usage)
-				accountSelect[0].SetSelected(item.AccountA)
-				amounts[0].SetText(strconv.FormatFloat(item.AccountAPay, 'f', 2, 64))
-				accountSelect[1].SetSelected(item.AccountB)
-				amounts[1].SetText(strconv.FormatFloat(item.AccountBPay, 'f', 2, 64))
+				accountSelect[0].SetSelected(item.Payment.Name)
+				amounts[0].SetText(strconv.FormatFloat(item.Payment.Cost, 'f', 2, 64))
+				accountSelect[1].SetSelected(item.Receiver.Name)
+				amounts[1].SetText(strconv.FormatFloat(item.Receiver.Cost, 'f', 2, 64))
 				data.RefreshPage()
 			})
 		}

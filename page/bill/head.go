@@ -1,25 +1,23 @@
 package bill
 
 import (
-	"bookkeeper/intf"
 	"bookkeeper/page/component"
+	"bookkeeper/service"
+	"fmt"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/layout"
+	"fyne.io/fyne/v2/widget"
+	"log"
+	"time"
 )
 
 type Head struct {
-	gather  intf.Component
-	date    fyne.CanvasObject
-	account intf.Component
+	period fyne.CanvasObject
+	gather service.Component
+	date   fyne.CanvasObject
+	//account service.Component
 	content fyne.CanvasObject
-}
-
-func NewHead() *Head {
-	return &Head{
-		gather:  component.NewGather(),
-		account: NewAccount(),
-		date:    component.NewDate().Content(),
-	}
 }
 
 func (h *Head) Content() fyne.CanvasObject {
@@ -28,8 +26,29 @@ func (h *Head) Content() fyne.CanvasObject {
 	}
 
 	gather := h.gather.Content()
-	account := h.account.Content()
+	//account := h.account.Content()
 
-	h.content = container.NewVBox(gather, h.date, account)
+	h.content = container.NewVBox(gather, h.period)
 	return h.content
+}
+
+func NewHead() *Head {
+	period, err := service.DataService.Period.Get()
+	if err != nil {
+		log.Panicln(err)
+	}
+	text := fmt.Sprintf("%s ~ %s", period[0].Format(time.DateOnly), period[1].Format(time.DateOnly))
+	button := widget.NewButton(text, func() {
+		picker := component.Picker{}
+		picker.Popup()
+	})
+	button.Alignment = widget.ButtonAlignLeading
+	button.Importance = widget.HighImportance
+
+	return &Head{
+		period: container.NewHBox(button, layout.NewSpacer()),
+		gather: component.NewGather(),
+		//account: NewAccount(),
+		//date: component.NewDate().Content(),
+	}
 }

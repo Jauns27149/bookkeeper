@@ -1,4 +1,4 @@
-package intf
+package service
 
 import "fyne.io/fyne/v2"
 

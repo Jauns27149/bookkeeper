@@ -26,8 +26,8 @@ func newStatistic() *Statistic {
 		}
 	}
 	for _, v := range DataService.Deals {
-		count(v.AccountA, v.AccountAPay)
-		count(v.AccountB, v.AccountBPay)
+		count(v.Payment.Name, v.Payment.Cost)
+		count(v.Receiver.Name, v.Receiver.Cost)
 	}
 
 	for k, v := range data.ExpenseMap {
