@@ -3,9 +3,11 @@ package page
 import (
 	"bookkeeper/constant"
 	"bookkeeper/service"
+	"fmt"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
+	"log"
 )
 
 type Index struct {
@@ -17,6 +19,8 @@ type Index struct {
 }
 
 func (i *Index) Content() fyne.CanvasObject {
+	log.Println("start create index content")
+
 	texts := []string{constant.Bill, constant.Tally, constant.Account}
 	components := []service.Component{i.bill, i.tally, i.account}
 	buttons := make([]*widget.Button, len(texts))
@@ -40,29 +44,22 @@ func (i *Index) Content() fyne.CanvasObject {
 	}
 	content = container.NewBorder(nil, bottom, nil, nil, subContent)
 
-	go i.listener(buttons)
+	eventFunc[constant.Index] = func() {
+		content.Remove(components[i.current].Content())
+		buttons[i.current].Enable()
+		i.current = 0
+		content.Add(components[0].Content())
+		components[0].Content().Refresh()
+		buttons[0].Disable()
+		content.Refresh()
+		fmt.Println("refresh .......")
+	}
+
 	return content
 }
 
-func (i *Index) listener(buttons []*widget.Button) {
-	for {
-		select {
-		case key := <-service.TallyService.Finish:
-			var index int
-			switch key {
-			case constant.Bill:
-				index = 0
-			case constant.Tally:
-				index = 1
-			}
-			fyne.Do(func() {
-				buttons[index].OnTapped()
-			})
-		}
-	}
-}
-
 func NewIndex() *Index {
+	log.Println("create page index start...")
 	return &Index{
 		bill:    NewBill(),
 		tally:   NewTally(),

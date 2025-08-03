@@ -15,25 +15,26 @@ import (
 type Head struct {
 	period fyne.CanvasObject
 	gather service.Component
-	date   fyne.CanvasObject
-	//account service.Component
+
 	content fyne.CanvasObject
 }
 
 func (h *Head) Content() fyne.CanvasObject {
+	log.Println("head content start...", h)
 	if h.content != nil {
 		return h.content
 	}
 
 	gather := h.gather.Content()
-	//account := h.account.Content()
+
+	log.Println("gather info content successful, ", gather)
 
 	h.content = container.NewVBox(gather, h.period)
 	return h.content
 }
 
 func NewHead() *Head {
-	period, err := service.DataService.Period.Get()
+	period, err := service.BillService.Period.Get()
 	if err != nil {
 		log.Panicln(err)
 	}

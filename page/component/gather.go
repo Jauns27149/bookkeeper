@@ -5,6 +5,7 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
+	"log"
 )
 
 type Gather struct {
@@ -15,19 +16,29 @@ func NewGather() *Gather {
 }
 
 func (g *Gather) Content() fyne.CanvasObject {
-	server := service.DataService
-	head := []string{"收入", "支出", "负债"}
+	log.Println("gather content start")
+	log.Println("get server: ")
+	head := []string{"收入", "支出", "负债", "预算"}
 	grib := container.NewGridWithColumns(len(head))
 	for _, h := range head {
+		log.Println(h)
 		grib.Add(widget.NewLabel(h))
 	}
-	grib.Add(widget.NewLabelWithData(server.Income))
-	grib.Add(widget.NewLabelWithData(server.Expense))
-	grib.Add(widget.NewLabelWithData(server.Liability))
+	log.Println("create gather head info,")
+	grib.Add(widget.NewLabelWithData(service.BillService.Income))
+	grib.Add(widget.NewLabelWithData(service.BillService.Expense))
+	log.Println("here")
+	grib.Add(widget.NewLabelWithData(service.BillService.Liability))
+	log.Println("not here")
+	grib.Add(widget.NewLabelWithData(service.BillService.Budget))
 
-	for _, o := range grib.Objects {
-		o.(*widget.Label).Alignment = fyne.TextAlignCenter
+	for i, o := range grib.Objects {
+		label := o.(*widget.Label)
+		label.Alignment = fyne.TextAlignCenter
+		if i >= len(head) {
+			label.Importance = widget.WarningImportance
+		}
 	}
-
+	log.Println("gather content successful")
 	return grib
 }

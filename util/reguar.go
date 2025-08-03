@@ -2,23 +2,12 @@ package util
 
 import (
 	"bookkeeper/model"
-	"log"
 	"regexp"
-	"strconv"
-	"strings"
 )
 
-func CountPay(accountMap map[string]float64, statement string) {
-	reg := regexp.MustCompile(`[^ ]+:[^ ]+ [0-9.-]+`)
-	all := reg.FindAllString(statement, -1)
-	for _, v := range all {
-		banks := strings.Split(v, " ")
-		account := banks[0]
-		cost, err := strconv.ParseFloat(banks[1], 64)
-		if err != nil {
-			log.Fatal(err)
-		}
-		accountMap[account] += cost
+func CountPay(accountMap map[string]float64, statement model.Deal) {
+	for _, v := range []model.Account{statement.Payment, statement.Receiver} {
+		accountMap[v.Name] += v.Cost
 	}
 }
 

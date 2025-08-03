@@ -20,7 +20,3 @@ const (
 	Delete = "删除"
 	Cancel = "取消"
 )
-
-const (
-	FyneDate = "01/02/2006"
-)

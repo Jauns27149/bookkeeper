@@ -17,7 +17,7 @@ func (u *usage) Content() fyne.CanvasObject {
 }
 
 func NewUsage() service.Component {
-	data := service.DataService
+	data := service.BillService
 	payee := widget.NewEntryWithData(data.Payee)
 	utilize := widget.NewEntryWithData(data.Utilize)
 

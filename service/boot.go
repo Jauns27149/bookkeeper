@@ -1,22 +1,24 @@
 package service
 
+import "log"
+
 var (
 	AccountService *Account
-	DataService    *Data
+	BillService    *Bill
 	TallyService   *Tally
 )
 
 func Boot() {
-	DataService = NewData()
-	DataService.Refresh()
+	BillService = NewBill()
+	go BillService.Load()
+
 	AccountService = NewAccount()
 	TallyService = NewTally()
 
 	listener()
-
+	log.Println("data servicer start successful")
 }
 
 func listener() {
-	preference()
-	account()
+	go dataEvent()
 }

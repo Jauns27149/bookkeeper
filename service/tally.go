@@ -3,16 +3,18 @@ package service
 import (
 	"bookkeeper/constant"
 	"bookkeeper/model"
+	"bookkeeper/util"
 	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/data/binding"
 	"sort"
 	"strings"
 )
 
 type Tally struct {
-	pref       fyne.Preferences
-	accounts   []model.SubAccount
-	Finish     chan string
-	UpdateItem chan model.Deal
+	pref     fyne.Preferences
+	accounts []model.SubAccount
+
+	model.Record
 }
 
 func (t *Tally) Prefixes() (prefixes []string) {
@@ -31,6 +33,16 @@ func (t *Tally) Suffixes(prefix string) (suffixes []string) {
 		}
 	}
 	return
+}
+
+func (t *Tally) Deal() model.Deal {
+	return model.Deal{
+		Date:     util.BindTime(constant.FyneDate, t.Date),
+		Payee:    util.BindSting(t.Receiver),
+		Usage:    util.BindSting(t.Usage),
+		Payment:  util.Account(t.From, t.Cost, true),
+		Receiver: util.Account(t.To, t.Cost, false),
+	}
 }
 
 func NewTally() *Tally {
@@ -57,9 +69,23 @@ func NewTally() *Tally {
 	sort.Slice(accounts, func(i, j int) bool { return len(accounts[i].Suffixes) > len(accounts[j].Suffixes) })
 
 	return &Tally{
-		pref:       pref,
-		accounts:   accounts,
-		Finish:     make(chan string, 1),
-		UpdateItem: make(chan model.Deal, 1),
+		pref:     pref,
+		accounts: accounts,
+
+		Record: model.Record{
+			Cost:     binding.NewString(),
+			Receiver: binding.NewString(),
+			Usage:    binding.NewString(),
+			From: model.BindAccount{
+				Prefix:  binding.NewString(),
+				Account: binding.NewString(),
+			},
+			To: model.BindAccount{
+				Prefix:  binding.NewString(),
+				Account: binding.NewString(),
+			},
+			Date: binding.NewString(),
+		},
 	}
+
 }

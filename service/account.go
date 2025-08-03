@@ -19,7 +19,8 @@ func (a *Account) AccountCollection() []model.Bank {
 	for _, period := range periods {
 		statements := a.pref.StringList(period)
 		for _, statement := range statements {
-			util.CountPay(accountMap, statement)
+			deal := convert.StringToDeal(statement)
+			util.CountPay(accountMap, deal)
 		}
 	}
 

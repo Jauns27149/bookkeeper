@@ -23,20 +23,22 @@ func NewDeal() *Deal {
 }
 
 func (d *Deal) Content() fyne.CanvasObject {
+	log.Println("deal content start...")
 	var list *widget.List
 	var currentBlabel *widget.Label
 	var currentStack *fyne.Container
 	list = widget.NewList(
 		func() int {
-			return len(service.DataService.Statements)
+			// TODO 未知原因数量少1
+			return len(service.BillService.Statements) + 1
 		},
 		func() fyne.CanvasObject {
 			return container.NewVBox()
 		},
 		func(id widget.ListItemID, object fyne.CanvasObject) {
-			statement := service.DataService.Statements[id]
-			if id == 5 {
-				fmt.Println(service.DataService.Statements)
+			statement := service.BillService.Statements[id]
+			if id == len(service.BillService.Statements) {
+				fmt.Println(service.BillService.Statements)
 			}
 			title := widget.NewLabel(statement.Date.Format(time.DateOnly))
 			vbox := container.NewVBox(title)
@@ -67,14 +69,14 @@ func (d *Deal) Content() fyne.CanvasObject {
 
 				buttonsH := container.NewHBox()
 				update := widget.NewButton(constant.Update, func() {
-					service.TallyService.Finish <- constant.Tally
-					service.DataService.RemoveDeal(item)
+					//service.TallyService.Finish <- constant.Tally
+					service.BillService.Delete(item)
 					buttonsH.Hide()
 				})
 				update.Importance = widget.WarningImportance
 
 				deleteItem := widget.NewButton(constant.Delete, func() {
-					service.DataService.RemoveDeal(item)
+					service.BillService.Delete(item)
 					buttonsH.Hide()
 				})
 				deleteItem.Importance = widget.DangerImportance

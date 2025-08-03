@@ -20,7 +20,7 @@ func MapToChartValues(Map map[string]float64) []chart.Value {
 	return values
 }
 
-func DealToString(deal model.Deal) string {
+func DealToRow(deal model.Deal) string {
 	rowData := []string{
 		deal.Date.Format(time.DateOnly),
 		deal.Payee,
@@ -45,7 +45,7 @@ func MapToBank(accountMap map[string]float64) []model.Bank {
 }
 
 func StringToDeal(row string) model.Deal {
-	d := strings.Split(row, constant.Comma)
+	d := strings.Split(strings.TrimSpace(row), constant.Comma)
 	if len(d) != 9 {
 		log.Panicln(d)
 	}

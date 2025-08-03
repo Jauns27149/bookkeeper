@@ -66,7 +66,7 @@ func (p *Picker) Content() *fyne.Container {
 	lineTail.Position2.Y = lineTail.Position2.Y + elementSize.Height + 10
 
 	p.scroll = scroll
-	go p.align()
+	//go p.align()
 	scroll.OnScrolled = func(position fyne.Position) {
 		p.aligning <- position.Y
 	}

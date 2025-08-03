@@ -12,3 +12,14 @@ const (
 var (
 	Period = "period"
 )
+
+// data event
+const (
+	Load = iota
+	Count
+)
+
+// ui event
+const (
+	Index = iota
+)
