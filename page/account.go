@@ -18,19 +18,18 @@ type Account struct {
 	categorization []*widget.Button
 	current        int
 
-	content fyne.CanvasObject
+	content *fyne.Container
 }
 
 func (a *Account) Content() fyne.CanvasObject {
 	if a.content != nil {
 		return a.content
 	}
-	var content *fyne.Container
 	for i, button := range a.categorization {
 		ii := i
 		button.OnTapped = func() {
-			content.Remove(a.subContents[a.current])
-			content.Add(a.subContents[ii])
+			a.content.Remove(a.subContents[a.current])
+			a.content.Add(a.subContents[ii])
 			a.categorization[a.current].Enable()
 			a.categorization[ii].Disable()
 			a.current = ii

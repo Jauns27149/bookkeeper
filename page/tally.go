@@ -46,8 +46,8 @@ func NewTally() service.Component {
 	activity.SetPlaceHolder("用途 -- 午饭")
 	usage := container.New(layoutCustom.NewSplit(0.318), payee, activity)
 
-	to := ui.AccountSelect(service.TallyService.To, constant.Expenses)
-	from := ui.AccountSelect(service.TallyService.From, constant.Liabilities)
+	to := ui.AccountSelect(service.TallyService.To, constant.Liabilities)
+	from := ui.AccountSelect(service.TallyService.From, constant.Expenses)
 
 	finish := widget.NewButton("完成", func() {
 		service.BillService.Add(service.TallyService.Deal())
@@ -58,8 +58,8 @@ func NewTally() service.Component {
 		spend:    spend,
 		date:     date,
 		usage:    usage,
-		payment:  to,
 		receiver: from,
+		payment:  to,
 		finish:   finish,
 	}
 }
