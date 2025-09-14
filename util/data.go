@@ -4,6 +4,7 @@ import (
 	"bookkeeper/constant"
 	"bookkeeper/convert"
 	"bookkeeper/model"
+	"fmt"
 	"fyne.io/fyne/v2/data/binding"
 	"log"
 	"strconv"
@@ -11,6 +12,9 @@ import (
 	"time"
 )
 
+func AccountCombination(prefix, suffix binding.String) string {
+	return fmt.Sprintf("%s:%s", GetPrefString(prefix), GetPrefString(suffix))
+}
 func FillStatements(rows []string, statements []model.Statement) []model.Statement {
 	for _, row := range rows {
 		deal := convert.StringToDeal(row)

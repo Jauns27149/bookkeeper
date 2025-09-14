@@ -33,6 +33,10 @@ func DealToRow(deal model.Deal) string {
 	return strings.Join(rowData, constant.Comma)
 }
 
+func Float64ToString(f float64) string {
+	return strconv.FormatFloat(f, 'f', 2, 64)
+}
+
 func MapToBank(accountMap map[string]float64) []model.Bank {
 	bank := make([]model.Bank, 0, len(accountMap))
 	for k, v := range accountMap {

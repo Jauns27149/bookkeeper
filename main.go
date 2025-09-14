@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bookkeeper/event"
 	"bookkeeper/page"
 	"bookkeeper/service"
 	"fyne.io/fyne/v2"
@@ -21,7 +22,7 @@ func main() {
 
 	// 初始化数据
 	service.Boot()
-	page.Boot()
+	event.Run()
 	log.Println("data start successful")
 
 	w.Resize(fyne.NewSize(600, 500))

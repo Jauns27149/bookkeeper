@@ -2,6 +2,7 @@ package component
 
 import (
 	"bookkeeper/constant"
+	"bookkeeper/event"
 	"bookkeeper/service"
 	"bookkeeper/util"
 	"fmt"
@@ -23,14 +24,12 @@ func NewDeal() *Deal {
 }
 
 func (d *Deal) Content() fyne.CanvasObject {
-	log.Println("deal content start...")
 	var list *widget.List
 	var currentBlabel *widget.Label
 	var currentStack *fyne.Container
 	list = widget.NewList(
 		func() int {
-			// TODO 未知原因数量少1
-			return len(service.BillService.Statements) + 1
+			return len(service.BillService.Statements)
 		},
 		func() fyne.CanvasObject {
 			return container.NewVBox()
@@ -43,7 +42,7 @@ func (d *Deal) Content() fyne.CanvasObject {
 			title := widget.NewLabel(statement.Date.Format(time.DateOnly))
 			vbox := container.NewVBox(title)
 
-			for _, item := range statement.Deals {
+			for i, item := range statement.Deals {
 				from, to := item.Payment.Name, item.Receiver.Name
 				cost := item.Receiver.Cost
 				if item.Payment.Cost > 0 {
@@ -69,8 +68,10 @@ func (d *Deal) Content() fyne.CanvasObject {
 
 				buttonsH := container.NewHBox()
 				update := widget.NewButton(constant.Update, func() {
-					//service.TallyService.Finish <- constant.Tally
-					service.BillService.Delete(item)
+					event.CurrentEvent=constant.UpdateEvent
+					event.UiEvent <- constant.UpdateEvent
+					event.DataIndex <- id
+					event.DataIndex <- i
 					buttonsH.Hide()
 				})
 				update.Importance = widget.WarningImportance

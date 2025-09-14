@@ -21,4 +21,7 @@ func Boot() {
 
 func listener() {
 	go dataEvent()
+	go uiEvent()
+	AccountConditon()
+	go dataListener()
 }

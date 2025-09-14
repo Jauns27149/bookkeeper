@@ -24,12 +24,9 @@ func (g *Gather) Content() fyne.CanvasObject {
 		log.Println(h)
 		grib.Add(widget.NewLabel(h))
 	}
-	log.Println("create gather head info,")
 	grib.Add(widget.NewLabelWithData(service.BillService.Income))
 	grib.Add(widget.NewLabelWithData(service.BillService.Expense))
-	log.Println("here")
 	grib.Add(widget.NewLabelWithData(service.BillService.Liability))
-	log.Println("not here")
 	grib.Add(widget.NewLabelWithData(service.BillService.Budget))
 
 	for i, o := range grib.Objects {

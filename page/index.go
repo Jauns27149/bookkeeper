@@ -2,8 +2,8 @@ package page
 
 import (
 	"bookkeeper/constant"
+	"bookkeeper/event"
 	"bookkeeper/service"
-	"fmt"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
@@ -15,7 +15,10 @@ type Index struct {
 	tally   service.Component
 	account service.Component
 
-	current int
+	current    int
+	content    *fyne.Container
+	components []service.Component
+	buttons    []*widget.Button
 }
 
 func (i *Index) Content() fyne.CanvasObject {
@@ -23,17 +26,16 @@ func (i *Index) Content() fyne.CanvasObject {
 
 	texts := []string{constant.Bill, constant.Tally, constant.Account}
 	components := []service.Component{i.bill, i.tally, i.account}
+	i.components = components
+
 	buttons := make([]*widget.Button, len(texts))
+	i.buttons = buttons
+
 	var content *fyne.Container
 	for ii, text := range texts {
 		iii := ii
 		buttons[ii] = widget.NewButton(text, func() {
-			content.Remove(components[i.current].Content())
-			buttons[i.current].Enable()
-			i.current = iii
-			content.Add(components[iii].Content())
-			components[iii].Content().Refresh()
-			buttons[iii].Disable()
+			i.changePage(iii)
 		})
 	}
 
@@ -44,18 +46,29 @@ func (i *Index) Content() fyne.CanvasObject {
 	}
 	content = container.NewBorder(nil, bottom, nil, nil, subContent)
 
-	eventFunc[constant.Index] = func() {
-		content.Remove(components[i.current].Content())
-		buttons[i.current].Enable()
-		i.current = 0
-		content.Add(components[0].Content())
-		components[0].Content().Refresh()
-		buttons[0].Disable()
-		content.Refresh()
-		fmt.Println("refresh .......")
+	service.PageEventFunc[constant.Index] = func() {
+		i.changePage(0)
 	}
 
+	event.UiFuncMap[constant.UpdateEvent] = append(event.UiFuncMap[constant.UpdateEvent], func() {
+		i.changePage(1)
+	})
+
+	i.content = content
 	return content
+}
+
+func (i *Index) changePage(index int) {
+	log.Println("current page index: ",i.current)
+
+	i.content.Remove(i.components[i.current].Content())
+	i.buttons[i.current].Enable()
+	i.current = index
+	i.content.Add(i.components[index].Content())
+	i.buttons[index].Disable()
+	i.content.Refresh()
+
+	log.Printf("page change to index [%v] page", index)
 }
 
 func NewIndex() *Index {

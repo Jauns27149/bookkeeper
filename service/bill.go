@@ -9,6 +9,7 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/data/binding"
 	"log"
+	"regexp"
 	"time"
 )
 
@@ -24,6 +25,10 @@ type Bill struct {
 
 type Condition struct {
 	Period binding.Item[[2]time.Time]
+	Prefix binding.String
+	Suffix binding.String
+
+	Date chan string
 }
 
 type Head struct {
@@ -37,6 +42,7 @@ func (b *Bill) Add(deal model.Deal) {
 	key := deal.Date.Format(constant.YearMonth)
 	list := b.pref.StringList(key)
 	b.pref.SetStringList(key, append(list, convert.DealToRow(deal)))
+	b.checkperiod(key)
 
 	b.DataEvent <- constant.Load
 	log.Println("add deal successful, ", deal)
@@ -60,11 +66,33 @@ func (b *Bill) Load() {
 	b.Statements = []model.Statement{}
 	for _, month := range period {
 		rows := b.pref.StringList(month)
+		rows = b.assertCondition(rows)
 		b.Statements = util.FillStatements(rows, b.Statements)
 	}
 
 	b.DataEvent <- constant.Count
 	fmt.Println("load data successfully, ", len(b.Statements))
+}
+
+func (b *Bill) checkperiod(key string) {
+	period := b.pref.StringList(constant.Period)
+	for _, p := range period {
+		if key == p {
+			return
+		}
+	}
+	b.pref.SetStringList(constant.Period, append(period, key))
+	log.Printf("save bill key %s successful", key)
+}
+
+func (b *Bill) assertCondition(rows []string) (newRows []string) {
+	account := util.AccountCombination(b.Prefix, b.Suffix)
+	for _, v := range rows {
+		if regexp.MustCompile(account).MatchString(v) {
+			newRows = append(newRows, v)
+		}
+	}
+	return
 }
 
 func NewBill() *Bill {
@@ -78,6 +106,10 @@ func NewBill() *Bill {
 		},
 		Condition: Condition{
 			Period: util.CreatePeriod(),
+			Prefix: binding.NewString(),
+			Suffix: binding.NewString(),
+
+			Date: make(chan string, 1),
 		},
 		Statements: []model.Statement{},
 		DataEvent:  make(chan int, 1),

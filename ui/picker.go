@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"bookkeeper/service"
 	"fmt"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
@@ -25,11 +26,13 @@ type Picker struct {
 }
 
 func NewPicker(list []string) *Picker {
-	return &Picker{
+	log.Printf("picker list: %v\n", list)
+	p := &Picker{
 		list:     list,
 		padding:  5,
 		aligning: make(chan float32, 1),
 	}
+	return p
 }
 func (p *Picker) Content() *fyne.Container {
 	box := container.New(layout.NewCustomPaddedVBoxLayout(p.padding))
@@ -66,13 +69,14 @@ func (p *Picker) Content() *fyne.Container {
 	lineTail.Position2.Y = lineTail.Position2.Y + elementSize.Height + 10
 
 	p.scroll = scroll
-	//go p.align()
+	go p.align()
 	scroll.OnScrolled = func(position fyne.Position) {
 		p.aligning <- position.Y
 	}
 
 	box.Objects[p.current].(*widget.Label).Importance = widget.HighImportance
 	scroll.ScrollToOffset(fyne.NewPos(0, float32(p.current-1)*(p.padding+p.subSize.Height)))
+
 	return container.NewWithoutLayout(scroll, lineHead, container.NewWithoutLayout(lineTail))
 }
 
@@ -94,13 +98,12 @@ func (p *Picker) align() {
 func (p *Picker) scrollToOffset(height float32) {
 	fmt.Println("start height:", height)
 	h := p.padding + p.subSize.Height
-	fmt.Println("unit height:", h)
 	var target float32
 	for i, _ := range p.list {
 		left := float32(i) * h
 
 		right := float32(i+1) * h
-		if i == len(p.list) {
+		if i+1 == len(p.list) {
 			right = math.MaxFloat32
 		}
 		if height >= left && height <= right {
@@ -120,7 +123,9 @@ func (p *Picker) scrollToOffset(height float32) {
 				p.current = i
 				box.Refresh()
 			})
-			fmt.Println("target:", target)
+
+			fmt.Printf("values: %s\n", p.list[i-1])
+			service.BillService.Condition.Date <- p.list[i-1]
 			break
 		}
 	}

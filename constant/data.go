@@ -22,4 +22,6 @@ const (
 // ui event
 const (
 	Index = iota
+	Date
+	UpdateEvent
 )

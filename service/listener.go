@@ -2,7 +2,13 @@ package service
 
 import (
 	"bookkeeper/constant"
+	"bookkeeper/event"
 	"bookkeeper/util"
+	"fmt"
+	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/data/binding"
+	"log"
+	"time"
 )
 
 func dataEvent() {
@@ -29,62 +35,65 @@ func dataEvent() {
 				}
 			}
 			util.SetValue(BillService.Head.Budget, budget)
-			BillService.UiEvent <- constant.Index
+			if event.CurrentEvent != constant.UpdateEvent {
+				BillService.UiEvent <- constant.Index
+			}
 		}
 	}
 }
 
-func accountBind() {
+var PageEventFunc = make(map[uint]func())
 
+func uiEvent() {
+	for {
+		key := <-BillService.UiEvent
+		fmt.Println("ui event: ", key)
+		fyne.Do(func() {
+			if fn, ok := PageEventFunc[uint(key)]; ok {
+				fn()
+			}
+		})
+	}
 }
 
-//func preference() {
-//	fyne.CurrentApp().Preferences().AddChangeListener(func() {
-//		BillService.LoadData()
-//
-//		uiRefresh()
-//	})
-//}
-//
-//func account() {
-//	accountType := BillService.AccountType
-//	accountType.AddListener(binding.NewDataListener(func() {
-//		acc, err := accountType.Get()
-//		if err != nil {
-//			log.Println(err)
-//			return
-//		}
-//		data := make([]model.Deal, 0)
-//		for _, deal := range BillService.Deals {
-//			if util.CheckAccount(deal, acc) {
-//				data = append(data, deal)
-//			}
-//		}
-//
-//		m := make(map[time.Time][]model.Deal)
-//		for _, v := range data {
-//			if _, ok := m[v.Date]; ok {
-//				m[v.Date] = append(m[v.Date], v)
-//			} else {
-//				m[v.Date] = []model.Deal{v}
-//			}
-//		}
-//		s := make([]model.Statement, 0, len(m))
-//		for k, v := range m {
-//			s = append(s, model.Statement{Date: k, Deals: v})
-//		}
-//		sort.Slice(s, func(i, j int) bool {
-//			return s[i].Date.After(s[j].Date)
-//		})
-//		BillService.Statements = s
-//
-//		BillService.Deals = data
-//		BillService.count()
-//		uiRefresh()
-//		log.Println("account change listened")
-//	}))
-//}
-//
-//func uiRefresh() {
-//	fyne.CurrentApp().Driver().AllWindows()[0].Content().Refresh()
-//}
+func AccountConditon() {
+	BillService.Suffix.AddListener(binding.NewDataListener(func() {
+		BillService.Load()
+	}))
+}
+
+func dataListener() {
+	date := time.Now().Format("200601")
+	for {
+		d := <-BillService.Condition.Date
+		if len(d) == 4 {
+			date = d + date[4:]
+		} else if len(d) == 2 {
+			date = date[:4] + d
+		} else if len(d) == 1 {
+			date = date[:4] + "0" + d
+		} else {
+			continue
+		}
+
+		start, err := time.Parse("20060102", date+"01")
+		if err != nil {
+			log.Panic(err)
+		}
+
+		end, err := time.Parse("20060102", date+"01")
+		end = end.AddDate(0, 1, -1)
+		if err != nil {
+			log.Panic(err)
+		}
+		period := [2]time.Time{start, end}
+
+		err = BillService.Condition.Period.Set(period)
+		if err != nil {
+			log.Panic(err)
+		}
+
+		BillService.UiEvent <- constant.Date
+		log.Println("period update: ", period)
+	}
+}
