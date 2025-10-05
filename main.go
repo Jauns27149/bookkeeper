@@ -20,7 +20,6 @@ func main() {
 	a := app.NewWithID("bookkeeper")
 	w := a.NewWindow("bookkeeper")
 
-	// 初始化数据
 	service.Boot()
 	event.Run()
 	log.Println("data start successful")
@@ -28,4 +27,5 @@ func main() {
 	w.Resize(fyne.NewSize(600, 500))
 	w.SetContent(page.NewIndex().Content())
 	w.ShowAndRun()
+
 }

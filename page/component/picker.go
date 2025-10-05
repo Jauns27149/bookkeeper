@@ -5,6 +5,8 @@ import (
 	"bookkeeper/service"
 	"bookkeeper/ui"
 	"bookkeeper/util"
+	"time"
+
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/layout"
@@ -12,7 +14,12 @@ import (
 )
 
 type Picker struct {
-	popup *widget.PopUp
+	popup   *widget.PopUp
+	content *fyne.Container
+	c       *fyne.Container
+	top     *fyne.Container
+	confirm *widget.Button
+	period  *fyne.Container
 }
 
 func (p *Picker) Content() fyne.CanvasObject {
@@ -24,14 +31,35 @@ func (p *Picker) Popup() {
 		p.popup.Show()
 	}
 
-	monthButton := widget.NewButton("Select Month", nil)
-	monthButton.OnTapped = func() {
-		monthButton.Importance = widget.HighImportance
-	}
-	top := container.NewHBox(monthButton)
+	var c fyne.CanvasObject
 
-	monthScroll := ui.NewPicker(util.Months(3)).Content()
-	yearScroll := ui.NewPicker(util.Years(5)).Content()
+	var monthButton, custom *widget.Button
+	monthButton = widget.NewButton("月份选择", func() {
+		monthButton.Importance = widget.HighImportance
+		custom.Importance = widget.MediumImportance
+		monthScroll := ui.NewPicker(util.Months()).Content()
+		yearScroll := ui.NewPicker(util.Years(5)).Content()
+		temp := container.NewGridWithColumns(4, layout.NewSpacer(), yearScroll, monthScroll, layout.NewSpacer())
+		p.content.Remove(p.c)
+		p.content.Add(temp)
+		p.c = temp
+		p.popup.Refresh()
+	})
+
+	custom = widget.NewButton("自定义时间", func() {
+		custom.Importance = widget.HighImportance
+		monthButton.Importance = widget.MediumImportance
+		year := ui.NewPicker(util.Years(5)).Content()
+		month := ui.NewPicker(util.Months()).Content()
+		n := time.Now()
+		day := ui.NewPicker(util.Days(n.Year(), int(n.Month()))).Content()
+		temp := container.NewGridWithColumns(5, layout.NewSpacer(), year, month, day, layout.NewSpacer())
+		p.content.Remove(p.c)
+		p.content.Add(temp)
+		p.c = temp
+		p.popup.Refresh()
+	})
+	top := container.NewVBox(container.NewHBox(monthButton, custom))
 
 	confirm := widget.NewButton("Confirm", func() {
 		service.BillService.DataEvent <- constant.Load
@@ -39,19 +67,16 @@ func (p *Picker) Popup() {
 	})
 	confirm.Importance = widget.HighImportance
 
-	content := container.NewBorder(top, confirm, nil, nil,
-		container.NewGridWithColumns(4, layout.NewSpacer(), yearScroll, monthScroll, layout.NewSpacer()),
-		//		container.NewGridWithColumns(2, yearScroll, monthScroll),
-	)
+	p.content = container.NewBorder(top, confirm, nil, nil, c)
 
 	canvas := util.PrimaryCanvas()
-	popup := widget.NewPopUp(content, canvas)
+	popup := widget.NewPopUp(p.content, canvas)
 	size := canvas.Size()
 	popup.Resize(fyne.NewSize(size.Width, size.Height*0.618))
 	popup.Move(fyne.NewPos(0, size.Height*0.382))
 	popup.Show()
 
-	p.popup=popup
+	p.popup = popup
 }
 
 func NewPicker() service.Component {

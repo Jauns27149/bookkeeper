@@ -1,10 +1,12 @@
 package util
 
 import (
-	"fyne.io/fyne/v2/data/binding"
+	"fmt"
 	"log"
 	"strconv"
 	"time"
+
+	"fyne.io/fyne/v2/data/binding"
 )
 
 func Years(n int) (years []string) {
@@ -17,13 +19,24 @@ func Years(n int) (years []string) {
 	return
 }
 
-func Months(n int) (months []string) {
+func Months() (months []string) {
 	for i := range 12 {
 		months = append(months, strconv.Itoa(i+1))
 	}
-	for range n {
-		months = append(months, months...)
+	return
+}
+
+func Days(y, m int) (days []string) {
+	t, err := time.Parse(time.DateOnly, fmt.Sprintf("%d-%d-01", y, m))
+	if err != nil {
+		log.Println(err)
 	}
+	for int(t.Month()) == m {
+		days = append(days, strconv.Itoa(t.Day()))
+		t = t.AddDate(0, 0, 1)
+	}
+
+	log.Println("create days finished, days: ", days)
 	return
 }
 
