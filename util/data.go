@@ -1,7 +1,7 @@
 package util
 
 import (
-	"bookkeeper/constant"
+	"bookkeeper/constant-old"
 	"bookkeeper/convert"
 	"bookkeeper/model"
 	"fmt"
@@ -86,7 +86,7 @@ func Account(bind model.BindAccount, b binding.String, positive bool) model.Acco
 }
 
 func BindTime(date string, bind binding.String) time.Time {
-	t, err := time.Parse(constant.FyneDate, BindSting(bind))
+	t, err := time.Parse(constant_old.FyneDate, BindSting(bind))
 	if err != nil {
 		log.Panicln(err)
 	}

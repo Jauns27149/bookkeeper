@@ -1,9 +1,9 @@
 package component
 
 import (
-	"bookkeeper/constant"
+	"bookkeeper/constant-old"
 	"bookkeeper/event"
-	"bookkeeper/service"
+	"bookkeeper/service-old"
 	"bookkeeper/util"
 	"fmt"
 	"fyne.io/fyne/v2"
@@ -29,15 +29,15 @@ func (d *Deal) Content() fyne.CanvasObject {
 	var currentStack *fyne.Container
 	list = widget.NewList(
 		func() int {
-			return len(service.BillService.Statements)
+			return len(service_old.BillService.Statements)
 		},
 		func() fyne.CanvasObject {
 			return container.NewVBox()
 		},
 		func(id widget.ListItemID, object fyne.CanvasObject) {
-			statement := service.BillService.Statements[id]
-			if id == len(service.BillService.Statements) {
-				fmt.Println(service.BillService.Statements)
+			statement := service_old.BillService.Statements[id]
+			if id == len(service_old.BillService.Statements) {
+				fmt.Println(service_old.BillService.Statements)
 			}
 			title := widget.NewLabel(statement.Date.Format(time.DateOnly))
 			vbox := container.NewVBox(title)
@@ -67,17 +67,17 @@ func (d *Deal) Content() fyne.CanvasObject {
 				subStatement := container.NewHBox(richText, layout.NewSpacer(), costText)
 
 				buttonsH := container.NewHBox()
-				update := widget.NewButton(constant.Update, func() {
-					event.CurrentEvent=constant.UpdateEvent
-					event.UiEvent <- constant.UpdateEvent
+				update := widget.NewButton(constant_old.Update, func() {
+					event.CurrentEvent = constant_old.UpdateEvent
+					event.UiEvent <- constant_old.UpdateEvent
 					event.DataIndex <- id
 					event.DataIndex <- i
 					buttonsH.Hide()
 				})
 				update.Importance = widget.WarningImportance
 
-				deleteItem := widget.NewButton(constant.Delete, func() {
-					service.BillService.Delete(item)
+				deleteItem := widget.NewButton(constant_old.Delete, func() {
+					service_old.BillService.Delete(item)
 					buttonsH.Hide()
 				})
 				deleteItem.Importance = widget.DangerImportance

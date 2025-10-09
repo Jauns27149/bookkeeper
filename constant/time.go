@@ -1,7 +1,5 @@
 package constant
 
 const (
-	FyneDate = "01/02/2006"
-	YearMonth="2006-01"
+	OnlyMonth ="2006-01"
 )
-

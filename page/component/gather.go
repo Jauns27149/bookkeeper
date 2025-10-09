@@ -1,7 +1,7 @@
 package component
 
 import (
-	"bookkeeper/service"
+	"bookkeeper/service-old"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
@@ -24,10 +24,10 @@ func (g *Gather) Content() fyne.CanvasObject {
 		log.Println(h)
 		grib.Add(widget.NewLabel(h))
 	}
-	grib.Add(widget.NewLabelWithData(service.BillService.Income))
-	grib.Add(widget.NewLabelWithData(service.BillService.Expense))
-	grib.Add(widget.NewLabelWithData(service.BillService.Liability))
-	grib.Add(widget.NewLabelWithData(service.BillService.Budget))
+	grib.Add(widget.NewLabelWithData(service_old.BillService.Income))
+	grib.Add(widget.NewLabelWithData(service_old.BillService.Expense))
+	grib.Add(widget.NewLabelWithData(service_old.BillService.Liability))
+	grib.Add(widget.NewLabelWithData(service_old.BillService.Budget))
 
 	for i, o := range grib.Objects {
 		label := o.(*widget.Label)

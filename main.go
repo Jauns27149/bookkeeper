@@ -1,31 +1,21 @@
 package main
 
 import (
-	"bookkeeper/event"
-	"bookkeeper/page"
+	"bookkeeper/app"
+
 	"bookkeeper/service"
-	"fyne.io/fyne/v2"
-	"fyne.io/fyne/v2/app"
-	"log"
+	"bookkeeper/ui"
 )
 
 func main() {
-	defer func() {
-		if err := recover(); err != nil {
-			log.Println(err)
-		}
-	}()
+	app.Run()
+	service.Run()
+	ui.Run()
+	content := ui.Content()
+	app.Window.SetContent(content)
+	app.Window.ShowAndRun()
 
-	log.Println("账本开始启动...")
-	a := app.NewWithID("bookkeeper")
-	w := a.NewWindow("bookkeeper")
-
-	service.Boot()
-	event.Run()
-	log.Println("data start successful")
-
-	w.Resize(fyne.NewSize(600, 500))
-	w.SetContent(page.NewIndex().Content())
-	w.ShowAndRun()
-
+	// w :=app.New().NewWindow("bookkeeper")
+	// w.SetContent(widget.NewLabel("你好"))
+	// w.ShowAndRun()
 }

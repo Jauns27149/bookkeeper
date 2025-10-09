@@ -1,33 +1,85 @@
 package ui
 
 import (
-	"bookkeeper/layoutCustom"
+	"bookkeeper/constant"
 	"bookkeeper/model"
 	"bookkeeper/service"
+	"log"
+	"strconv"
+
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
-	"fyne.io/fyne/v2/data/binding"
+	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/widget"
-	"log"
 )
 
-func AccountSelect(account model.BindAccount, pre string) fyne.CanvasObject {
-	prefixes := service.TallyService.Prefixes()
-	head := widget.NewSelectWithData(prefixes, account.Prefix)
-	tail := widget.NewSelectWithData(nil, account.Account)
-	err := account.Prefix.Set(pre)
-	if err != nil {
-		log.Panicln(err)
-	}
-	account.Prefix.AddListener(binding.NewDataListener(func() {
-		prefix, err := account.Prefix.Get()
-		if err != nil {
-			log.Panicln(err)
-		}
-		tail.SetOptions(service.TallyService.Suffixes(prefix))
-		tail.SetSelectedIndex(0)
-		tail.Refresh()
-	}))
+var _accounts = &account{}
+var source = []model.AccountDetail{}
 
-	return container.New(layoutCustom.NewSplit(0.318), head, tail)
+type account struct {
+	content fyne.CanvasObject
+	buttons []*widget.Button
+	list    *widget.List
+	detail  *widget.List
+}
+
+type mapAcountsObject struct {
+	name   *widget.Label
+	amount *widget.Label
+}
+
+func (a *account) createContent() {
+	if a.content != nil {
+		return
+	}
+
+	grid := container.NewGridWithColumns(len(a.buttons))
+	for _, b := range a.buttons {
+		grid.Add(b)
+	}
+
+	a.content = container.NewBorder(grid, nil, nil, nil, a.list)
+	log.Println("create accounts content finished")
+}
+
+func (a *account) createList() {
+	m := make(map[fyne.CanvasObject]*mapAcountsObject)
+	_accounts.list = widget.NewList(
+		func() int { return len(source) },
+		func() fyne.CanvasObject {
+			account := &mapAcountsObject{widget.NewLabel(constant.Zero), widget.NewLabel(constant.Zero)}
+			c := container.NewHBox(account.name, layout.NewSpacer(), account.amount)
+			m[c] = account
+			return c
+		},
+		func(id widget.ListItemID, object fyne.CanvasObject) {
+			m[object].name.SetText(source[id].Name)
+			m[object].amount.SetText(strconv.FormatFloat(source[id].Amount, 'f', 2, 64))
+		},
+	)
+}
+
+func init() {
+	go func() {
+		flag := make(chan struct{})
+		_accounts.createList()
+
+		data := service.GetAccounts().Accounts
+		for _, item := range data {
+			_accounts.buttons = append(_accounts.buttons, widget.NewButton(item.Category, func() {
+				source = item.AccountDetail
+				_accounts.list.Refresh()
+			}))
+		}
+		if len(data) >= 4 {
+			source = data[4].AccountDetail
+		}
+
+		close(flag)
+		setContent(constant.Account, func() fyne.CanvasObject {
+			<-flag
+			_accounts.createContent()
+			return _accounts.content
+		})
+	}()
 }

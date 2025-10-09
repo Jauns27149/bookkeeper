@@ -1,9 +1,9 @@
 package component
 
 import (
-	"bookkeeper/constant"
-	"bookkeeper/service"
-	"bookkeeper/ui"
+	"bookkeeper/constant-old"
+	"bookkeeper/service-old"
+	"bookkeeper/ui-old"
 	"bookkeeper/util"
 	"time"
 
@@ -62,7 +62,7 @@ func (p *Picker) Popup() {
 	top := container.NewVBox(container.NewHBox(monthButton, custom))
 
 	confirm := widget.NewButton("Confirm", func() {
-		service.BillService.DataEvent <- constant.Load
+		service_old.BillService.DataEvent <- constant_old.Load
 		p.popup.Hide()
 	})
 	confirm.Importance = widget.HighImportance
@@ -79,6 +79,6 @@ func (p *Picker) Popup() {
 	p.popup = popup
 }
 
-func NewPicker() service.Component {
+func NewPicker() service_old.Component {
 	return &Picker{}
 }

@@ -1,8 +1,8 @@
 package page
 
 import (
-	"bookkeeper/constant"
-	"bookkeeper/service"
+	"bookkeeper/constant-old"
+	"bookkeeper/service-old"
 	"bookkeeper/util"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
@@ -49,9 +49,9 @@ func (a *Account) Content() fyne.CanvasObject {
 }
 
 func NewAccount() *Account {
-	prefixes := []string{constant.Expenses, constant.Income, constant.Assets, constant.Liabilities}
+	prefixes := []string{constant_old.Expenses, constant_old.Income, constant_old.Assets, constant_old.Liabilities}
 	categorization, components := make([]*widget.Button, len(prefixes)), make([]fyne.CanvasObject, len(prefixes))
-	accounts := service.AccountService.AccountCollection()
+	accounts := service_old.AccountService.AccountCollection()
 	accountsMap := util.GroupAccountByPrefix(accounts)
 
 	for i, prefix := range prefixes {

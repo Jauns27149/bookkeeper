@@ -1,9 +1,9 @@
 package page
 
 import (
-	"bookkeeper/constant"
+	"bookkeeper/constant-old"
 	"bookkeeper/event"
-	"bookkeeper/service"
+	"bookkeeper/service-old"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
@@ -11,21 +11,21 @@ import (
 )
 
 type Index struct {
-	bill    service.Component
-	tally   service.Component
-	account service.Component
+	bill    service_old.Component
+	tally   service_old.Component
+	account service_old.Component
 
 	current    int
 	content    *fyne.Container
-	components []service.Component
+	components []service_old.Component
 	buttons    []*widget.Button
 }
 
 func (i *Index) Content() fyne.CanvasObject {
 	log.Println("start create index content")
 
-	texts := []string{constant.Bill, constant.Tally, constant.Account}
-	components := []service.Component{i.bill, i.tally, i.account}
+	texts := []string{constant_old.Bill, constant_old.Tally, constant_old.Account}
+	components := []service_old.Component{i.bill, i.tally, i.account}
 	i.components = components
 
 	buttons := make([]*widget.Button, len(texts))
@@ -46,11 +46,11 @@ func (i *Index) Content() fyne.CanvasObject {
 	}
 	content = container.NewBorder(nil, bottom, nil, nil, subContent)
 
-	service.PageEventFunc[constant.Index] = func() {
+	service_old.PageEventFunc[constant_old.Index] = func() {
 		i.changePage(0)
 	}
 
-	event.UiFuncMap[constant.UpdateEvent] = append(event.UiFuncMap[constant.UpdateEvent], func() {
+	event.UiFuncMap[constant_old.UpdateEvent] = append(event.UiFuncMap[constant_old.UpdateEvent], func() {
 		i.changePage(1)
 	})
 
@@ -59,7 +59,7 @@ func (i *Index) Content() fyne.CanvasObject {
 }
 
 func (i *Index) changePage(index int) {
-	log.Println("current page index: ",i.current)
+	log.Println("current page index: ", i.current)
 
 	i.content.Remove(i.components[i.current].Content())
 	i.buttons[i.current].Enable()

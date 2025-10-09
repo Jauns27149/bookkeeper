@@ -1,9 +1,9 @@
 package bill
 
 import (
-	"bookkeeper/constant"
+	"bookkeeper/constant-old"
 	"bookkeeper/page/component"
-	"bookkeeper/service"
+	"bookkeeper/service-old"
 	"fmt"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
@@ -14,9 +14,9 @@ import (
 )
 
 type Head struct {
-	gather service.Component
+	gather service_old.Component
 	period fyne.CanvasObject
-	filter service.Component
+	filter service_old.Component
 
 	content fyne.CanvasObject
 }
@@ -28,13 +28,13 @@ func (h *Head) Content() fyne.CanvasObject {
 
 	gather := h.gather.Content()
 	h.content = container.NewVBox(gather, container.NewGridWithColumns(2, h.period, widget.NewButton("确定", func() {
-		service.BillService.DataEvent <- constant.Load
+		service_old.BillService.DataEvent <- constant_old.Load
 	})), h.filter.Content())
 	return h.content
 }
 
 func NewHead() *Head {
-	period, err := service.BillService.Period.Get()
+	period, err := service_old.BillService.Period.Get()
 	if err != nil {
 		log.Panicln(err)
 	}
@@ -43,8 +43,8 @@ func NewHead() *Head {
 		picker := component.Picker{}
 		picker.Popup()
 	})
-	service.PageEventFunc[constant.Date] = func() {
-		period, err := service.BillService.Period.Get()
+	service_old.PageEventFunc[constant_old.Date] = func() {
+		period, err := service_old.BillService.Period.Get()
 		if err != nil {
 			log.Panicln(err)
 		}

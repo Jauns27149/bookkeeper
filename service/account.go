@@ -1,49 +1,62 @@
 package service
 
 import (
+	"bookkeeper/app"
 	"bookkeeper/constant"
 	"bookkeeper/convert"
 	"bookkeeper/model"
-	"bookkeeper/util"
-	"fyne.io/fyne/v2"
+	"log"
 	"strings"
+
+	"fyne.io/fyne/v2"
 )
 
-type Account struct {
-	pref fyne.Preferences
+var accounts = &Accounts{
+	pref: app.Preferences(),
 }
 
-func (r *Account) AccountCollection() []model.Bank {
-	periods := r.pref.StringList(constant.Period)
-	accountMap := make(map[string]float64)
+var accountsFlag = make(chan struct{})
 
-	for _, period := range periods {
-		statements := r.pref.StringList(period)
-		for _, statement := range statements {
-			deal := convert.StringToDeal(statement)
-			util.CountPay(accountMap, deal)
+type Accounts struct {
+	pref     fyne.Preferences
+	Accounts []model.AccountCategory
+}
+
+func GetAccounts() *Accounts {
+	<-accountsFlag
+	return accounts
+}
+
+func init() {
+	go func() {
+		dataAll := make(map[string]map[string]float64, 5)
+		period := accounts.pref.StringList(constant.Period)
+		for _, p := range period {
+			rows := accounts.pref.StringList(p)
+			data := convert.RowsToDatas(rows)
+			for _, d := range data {
+				for _, v := range []model.Account{d.From, d.To} {
+					names := strings.Split(v.Name, ":")
+					if _, ok := dataAll[names[0]]; !ok {
+						dataAll[names[0]] = make(map[string]float64)
+					}
+					dataAll[names[0]][names[1]] += v.Cost
+				}
+			}
 		}
-	}
 
-	return convert.MapToBank(accountMap)
-}
+		for key, value := range dataAll {
+			total := 0.0
+			for _, v := range value {
+				total += v
+			}
 
-func (r *Account) AccountMap() (accountMap map[string][]string) {
-	accountMap = map[string][]string{constant.All: {constant.All}}
-	accounts := r.pref.StringList(constant.Accounts)
-	for _, v := range accounts {
-		value := strings.Split(v, ":")
-		if _,ok :=accountMap[value[0]];!ok{
-			accountMap[value[0]]=[]string{constant.All}
+			dataAll[key][""] = total
 		}
-		accountMap[value[0]] = append(accountMap[value[0]], value[1])
-	}
 
-	return
-}
+		accounts.Accounts = convert.MapToAccounts(dataAll)
+		close(accountsFlag)
+		log.Println("load accounts data finished, size: ", len(accounts.Accounts))
 
-func NewAccount() *Account {
-	return &Account{
-		pref: fyne.CurrentApp().Preferences(),
-	}
+	}()
 }

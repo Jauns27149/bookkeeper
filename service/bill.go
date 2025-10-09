@@ -1,118 +1,142 @@
 package service
 
 import (
+	"bookkeeper/app"
 	"bookkeeper/constant"
 	"bookkeeper/convert"
+	"bookkeeper/event"
 	"bookkeeper/model"
-	"bookkeeper/util"
-	"fmt"
-	"fyne.io/fyne/v2"
-	"fyne.io/fyne/v2/data/binding"
 	"log"
 	"regexp"
+	"slices"
+	"strconv"
+	"strings"
+	"sync"
 	"time"
+
+	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/data/binding"
 )
 
-type Bill struct {
-	pref       fyne.Preferences
-	Statements []model.Statement
-	Head
-	Condition
+var _bill = sync.OnceValue(func() *bill {
+	prefix, suffix := binding.NewString(), binding.NewString()
+	prefix.Set(".*")
+	suffix.Set(".*")
+	n := time.Now()
+	return &bill{
+		condition: &model.Condition{
+			Account: make(map[string][]string, 5),
+			Perfix:  binding.NewString(),
+			Suffix:  binding.NewString(),
+			Start:   time.Date(n.Year(), n.Month(), 1, 0, 0, 0, 0, time.UTC),
+			End:     n,
+		},
+		aggregate: model.Aggregate{Income: binding.NewString(), Expenses: binding.NewString(), Budget: binding.NewString()},
+	}
+})()
 
-	DataEvent chan int
-	UiEvent   chan int
+type bill struct {
+	_data     []model.Data
+	aggregate model.Aggregate
+	condition *model.Condition
+	pref      fyne.Preferences
 }
 
-type Condition struct {
-	Period binding.Item[[2]time.Time]
-	Prefix binding.String
-	Suffix binding.String
+func init() {
+	_bill.pref = app.Preferences()
+	go func() {
+		LoadBill()
+		_bill.fetchConditionAccount()
+		event.SetEventFunc(constant.LoadBill, LoadBill)
+	}()
 
-	Date chan string
 }
 
-type Head struct {
-	Income    binding.String
-	Expense   binding.String
-	Liability binding.String
-	Budget    binding.String
+func LoadBill() {
+	_bill.loadData()
+	_bill.calculationAggregate()
+	event.LaunchEvent(constant.BillRefresh)
 }
 
-func (b *Bill) Add(deal model.Deal) {
-	key := deal.Date.Format(constant.YearMonth)
-	list := b.pref.StringList(key)
-	b.pref.SetStringList(key, append(list, convert.DealToRow(deal)))
-	b.checkperiod(key)
+func (b *bill) fetchConditionAccount() {
+	accounts := b.pref.StringList(constant.Accounts)
+	for _, a := range accounts {
+		v := strings.Split(a, ":")
+		b.condition.Account[v[0]] = append(b.condition.Account[v[0]], v[1])
+	}
 
-	b.DataEvent <- constant.Load
-	log.Println("add deal successful, ", deal)
+	event.LaunchEvent(constant.ConditionPrefixRefresh, constant.ConditionSuffixRefresh)
+	log.Println("fetch condition account finished")
 }
 
-func (b *Bill) Delete(deal model.Deal) {
-	key := deal.Date.Format(constant.YearMonth)
+func GetCondition() *model.Condition {
+	return _bill.condition
+}
+
+func GetAggregate() *model.Aggregate {
+	return &_bill.aggregate
+}
+
+func Delete(id int) {
+	_bill.delete(_bill._data[id])
+}
+
+func (b *bill) delete(deal model.Data) {
+	key := deal.Date.Format(constant.OnlyMonth)
 	list := b.pref.StringList(key)
 	for i, item := range list {
-		if row := convert.DealToRow(deal); item == row {
+		if row := convert.DataToRow(deal); item == row {
 			b.pref.SetStringList(key, append(list[:i], list[i+1:]...))
-			b.DataEvent <- constant.Load
+			event.LaunchEvent(constant.LoadBill)
 			log.Println("delete item successful, ", row)
 			break
 		}
 	}
 }
 
-func (b *Bill) Load() {
-	period := util.Period(b.Period)
-	b.Statements = []model.Statement{}
-	for _, month := range period {
-		rows := b.pref.StringList(month)
-		rows = b.assertCondition(rows)
-		b.Statements = util.FillStatements(rows, b.Statements)
+func (b *bill) calculationAggregate() {
+	accountMap := make(map[string]float64)
+	for _, d := range b._data {
+		from := strings.Split(d.From.Name, ":")[0]
+		accountMap[from] = accountMap[from] + d.From.Cost
+		to := strings.Split(d.To.Name, ":")[0]
+		accountMap[to] = accountMap[to] + d.From.Cost
 	}
 
-	b.DataEvent <- constant.Count
-	fmt.Println("load data successfully, ", len(b.Statements))
+	income := accountMap[constant.Income]
+	expenses := accountMap[constant.Expenses]
+
+	b.aggregate.Income.Set(strconv.FormatFloat(-income, 'f', 2, 64))
+	b.aggregate.Expenses.Set(strconv.FormatFloat(expenses, 'f', 2, 64))
+	b.aggregate.Budget.Set(strconv.FormatFloat(-income*0.618+expenses, 'f', 2, 64))
 }
 
-func (b *Bill) checkperiod(key string) {
-	period := b.pref.StringList(constant.Period)
-	for _, p := range period {
-		if key == p {
-			return
-		}
+func (b *bill) loadData() {
+	t := b.condition.Start
+	perfix, _ := b.condition.Perfix.Get()
+	suffix, _ := b.condition.Suffix.Get()
+
+	b._data = []model.Data{}
+	for !t.After(b.condition.End) {
+		d := b.pref.StringList(t.Format("2006-01"))
+		_data := convert.RowsToDatas(d)
+		_data = slices.DeleteFunc(_data, func(data model.Data) bool {
+			return !regexp.MustCompile(perfix+suffix).MatchString(data.From.Name+data.To.Name) ||
+				data.Date.Before(b.condition.Start) || data.Date.After(b.condition.End)
+
+		})
+		b._data = append(b._data, _data...)
+		t = t.AddDate(0, 1, 0)
 	}
-	b.pref.SetStringList(constant.Period, append(period, key))
-	log.Printf("save bill key %s successful", key)
+	slices.SortFunc(b._data, func(x, y model.Data) int { return int(y.Date.Sub(x.Date)) })
+
+	log.Println("load date finished, data size:", len(b._data))
 }
 
-func (b *Bill) assertCondition(rows []string) (newRows []string) {
-	account := util.AccountCombination(b.Prefix, b.Suffix)
-	for _, v := range rows {
-		if regexp.MustCompile(account).MatchString(v) {
-			newRows = append(newRows, v)
-		}
-	}
-	return
+func FetchData() []model.Data {
+	return _bill._data
 }
 
-func NewBill() *Bill {
-	return &Bill{
-		pref: fyne.CurrentApp().Preferences(),
-		Head: Head{
-			Income:    binding.NewString(),
-			Expense:   binding.NewString(),
-			Liability: binding.NewString(),
-			Budget:    binding.NewString(),
-		},
-		Condition: Condition{
-			Period: util.CreatePeriod(),
-			Prefix: binding.NewString(),
-			Suffix: binding.NewString(),
-
-			Date: make(chan string, 1),
-		},
-		Statements: []model.Statement{},
-		DataEvent:  make(chan int, 1),
-		UiEvent:    make(chan int, 1),
-	}
+func DataByIndex(i int) model.Data {
+	return _bill._data[i]
 }

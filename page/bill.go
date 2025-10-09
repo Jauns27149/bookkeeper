@@ -3,14 +3,14 @@ package page
 import (
 	"bookkeeper/page/bill"
 	"bookkeeper/page/component"
-	"bookkeeper/service"
+	"bookkeeper/service-old"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 )
 
 type Bill struct {
-	head    service.Component
-	deal    service.Component
+	head    service_old.Component
+	deal    service_old.Component
 	content fyne.CanvasObject
 }
 
