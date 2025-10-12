@@ -59,16 +59,16 @@ func (a *account) createList() {
 	)
 }
 
-func init() {
+func(a *account) run() {
 	go func() {
 		flag := make(chan struct{})
-		_accounts.createList()
+		a.createList()
 
 		data := service.GetAccounts().Accounts
 		for _, item := range data {
-			_accounts.buttons = append(_accounts.buttons, widget.NewButton(item.Category, func() {
+			a.buttons = append(a.buttons, widget.NewButton(item.Category, func() {
 				source = item.AccountDetail
-				_accounts.list.Refresh()
+				a.list.Refresh()
 			}))
 		}
 		if len(data) >= 4 {
@@ -78,8 +78,8 @@ func init() {
 		close(flag)
 		setContent(constant.Account, func() fyne.CanvasObject {
 			<-flag
-			_accounts.createContent()
-			return _accounts.content
+			a.createContent()
+			return a.content
 		})
 	}()
 }

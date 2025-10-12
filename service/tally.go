@@ -1,7 +1,6 @@
 package service
 
 import (
-	"bookkeeper/app"
 	"bookkeeper/constant"
 	"bookkeeper/convert"
 	"bookkeeper/model"
@@ -12,10 +11,7 @@ import (
 	"fyne.io/fyne/v2"
 )
 
-var _tally = &Tally{
-	pref:    app.Preferences(),
-	Account: make(map[string][]string),
-}
+var tally = &Tally{}
 
 type Tally struct {
 	pref    fyne.Preferences
@@ -23,11 +19,11 @@ type Tally struct {
 }
 
 func GetTally() *Tally {
-	return _tally
+	return tally
 }
 
 func Save(item model.Data) {
-	_tally.save(item)
+	tally.save(item)
 }
 
 func (t *Tally) save(item model.Data) {
@@ -54,6 +50,9 @@ func (t *Tally) loadAccount() {
 	log.Println("tally load account finished")
 }
 
-func init() {
-	go _tally.loadAccount()
+func(t *Tally) run() {
+	t.pref=fyne.CurrentApp().Preferences()
+	t.Account=make(map[string][]string)
+
+	go tally.loadAccount()
 }

@@ -1,7 +1,6 @@
 package service
 
 import (
-	"bookkeeper/app"
 	"bookkeeper/constant"
 	"bookkeeper/convert"
 	"bookkeeper/event"
@@ -11,29 +10,13 @@ import (
 	"slices"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/data/binding"
 )
 
-var _bill = sync.OnceValue(func() *bill {
-	prefix, suffix := binding.NewString(), binding.NewString()
-	prefix.Set(".*")
-	suffix.Set(".*")
-	n := time.Now()
-	return &bill{
-		condition: &model.Condition{
-			Account: make(map[string][]string, 5),
-			Perfix:  binding.NewString(),
-			Suffix:  binding.NewString(),
-			Start:   time.Date(n.Year(), n.Month(), 1, 0, 0, 0, 0, time.UTC),
-			End:     n,
-		},
-		aggregate: model.Aggregate{Income: binding.NewString(), Expenses: binding.NewString(), Budget: binding.NewString()},
-	}
-})()
+var _bill = &bill{}
 
 type bill struct {
 	_data     []model.Data
@@ -42,8 +25,26 @@ type bill struct {
 	pref      fyne.Preferences
 }
 
-func init() {
-	_bill.pref = app.Preferences()
+func (b *bill) run() {
+	prefix, suffix := binding.NewString(), binding.NewString()
+	prefix.Set(".*")
+	suffix.Set(".*")
+	n := time.Now()
+
+	b.aggregate = model.Aggregate{
+		Income:   binding.NewString(),
+		Expenses: binding.NewString(),
+		Budget:   binding.NewString(),
+	}
+
+	b.condition = &model.Condition{}
+	b.condition.Account = map[string][]string{".*": {".*"}}
+	b.condition.Perfix = binding.NewString()
+	b.condition.Suffix = binding.NewString()
+	b.condition.Start = time.Date(n.Year(), n.Month(), 1, 0, 0, 0, 0, time.UTC)
+	b.condition.End = n
+
+	b.pref = fyne.CurrentApp().Preferences()
 	go func() {
 		LoadBill()
 		_bill.fetchConditionAccount()
@@ -62,6 +63,9 @@ func (b *bill) fetchConditionAccount() {
 	accounts := b.pref.StringList(constant.Accounts)
 	for _, a := range accounts {
 		v := strings.Split(a, ":")
+		if b.condition.Account[v[0]] == nil {
+			b.condition.Account[v[0]] = append(b.condition.Account[v[0]], ".*")
+		}
 		b.condition.Account[v[0]] = append(b.condition.Account[v[0]], v[1])
 	}
 

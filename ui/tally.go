@@ -10,6 +10,8 @@ import (
 	"log"
 	"maps"
 	"slices"
+	"strconv"
+	"strings"
 	"time"
 
 	"fyne.io/fyne/v2"
@@ -64,13 +66,28 @@ func (t *tally) createUI() {
 	}
 	t.usage.payee.SetPlaceHolder("商户/收款人")
 	t.usage.activity.SetPlaceHolder("用途 -- 午饭")
-	t.usage.concent = container.NewBorder(nil, nil, t.usage.payee, nil, t.usage.activity)
+	t.usage.concent = container.NewGridWithColumns(2, t.usage.payee, t.usage.activity)
 
 	t.createAccount()
 
 	t.createFinish()
 
 	log.Println("create tally ui finished")
+}
+
+func (t *tally) updateValue(data model.Data) {
+	t.spend.SetText(strconv.FormatFloat(data.To.Cost, 'f', 2, 64))
+	t.date.SetDate(&data.Date)
+	t.usage.payee.SetText(data.Terminal)
+	t.usage.activity.SetText(data.Usage)
+
+	strs := strings.Split(data.From.Name, ":")
+	t.from.prefix.SetSelected(strs[0])
+	t.from.suffix.SetSelected(strs[1])
+
+	strs = strings.Split(data.To.Name, ":")
+	t.to.prefix.SetSelected(strs[0])
+	t.to.suffix.SetSelected(strs[1])
 }
 
 func (t *tally) createAccount() {
@@ -130,14 +147,14 @@ func (t *tally) createFinish() {
 	t.finish.Importance = widget.HighImportance
 }
 
-func init() {
+func (t *tally) run() {
 	flag := make(chan struct{})
-	go _tally.createUI()
+	go t.createUI()
 
 	close(flag)
 	setContent(constant.Tally, func() fyne.CanvasObject {
 		<-flag
-		_tally.createContent()
-		return _tally.content
+		t.createContent()
+		return t.content
 	})
 }

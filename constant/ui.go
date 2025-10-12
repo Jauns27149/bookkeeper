@@ -10,6 +10,7 @@ const (
 	Zero   = "---"
 	Delete = "删除"
 	Update = "更新"
+	Cancel = "取消"
 	Sure   = "确定"
 	Finish = "完成"
 )

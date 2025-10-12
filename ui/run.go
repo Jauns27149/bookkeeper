@@ -1,3 +1,5 @@
 package ui
 
-func Run() {}
+func Run() {
+	_home.run()
+}

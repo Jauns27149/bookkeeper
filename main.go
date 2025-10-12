@@ -1,21 +1,21 @@
 package main
 
 import (
-	"bookkeeper/app"
-
 	"bookkeeper/service"
 	"bookkeeper/ui"
+
+	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/app"
 )
 
 func main() {
-	app.Run()
+	w := app.NewWithID("bookkeeper").NewWindow("bookkeeper")
+	w.Resize(fyne.NewSize(600, 500))
+
 	service.Run()
 	ui.Run()
-	content := ui.Content()
-	app.Window.SetContent(content)
-	app.Window.ShowAndRun()
 
-	// w :=app.New().NewWindow("bookkeeper")
-	// w.SetContent(widget.NewLabel("你好"))
-	// w.ShowAndRun()
+	w.SetContent(ui.Content())
+	w.ShowAndRun()
+	
 }

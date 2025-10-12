@@ -9,11 +9,7 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
-var _bill = &bill{
-	statement: createStatementList(),
-	aggregate: _aggregate._content,
-	condition: getconditionContent(),
-}
+var _bill = &bill{}
 
 type bill struct {
 	aggregate fyne.CanvasObject
@@ -22,16 +18,23 @@ type bill struct {
 	content   fyne.CanvasObject
 }
 
-func init() {
-	_bill.content = container.NewBorder(
+func (b *bill) run() {
+	_aggregate.run()
+
+	b.statement = createStatementList()
+	b.aggregate = _aggregate.content
+	b.condition = getconditionContent()
+	b.content = container.NewBorder(
 		container.NewVBox(_bill.aggregate, _bill.condition),
-		nil, nil, nil, _bill.statement,)
+		nil, nil, nil, _bill.statement)
 
 	setContent(constant.Bill, func() fyne.CanvasObject {
-		return _bill.content
+		return b.content
 	})
 
 	event.SetEventFunc(constant.BillRefresh, func() {
-		_bill.content.Refresh()
+		b.content.Refresh()
 	})
+
+
 }

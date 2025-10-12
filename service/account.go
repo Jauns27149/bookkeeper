@@ -1,7 +1,6 @@
 package service
 
 import (
-	"bookkeeper/app"
 	"bookkeeper/constant"
 	"bookkeeper/convert"
 	"bookkeeper/model"
@@ -11,9 +10,7 @@ import (
 	"fyne.io/fyne/v2"
 )
 
-var accounts = &Accounts{
-	pref: app.Preferences(),
-}
+var accounts = &Accounts{}
 
 var accountsFlag = make(chan struct{})
 
@@ -27,7 +24,8 @@ func GetAccounts() *Accounts {
 	return accounts
 }
 
-func init() {
+func (a *Accounts) run() {
+	a.pref = fyne.CurrentApp().Preferences()
 	go func() {
 		dataAll := make(map[string]map[string]float64, 5)
 		period := accounts.pref.StringList(constant.Period)

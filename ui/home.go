@@ -3,25 +3,14 @@ package ui
 import (
 	"bookkeeper/constant"
 	"log"
-	"sync"
+	"log/slog"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
 )
 
-var _home *home = sync.OnceValue(func() *home {
-	h := &home{}
-	for i, v := range []string{constant.Bill, constant.Tally, constant.Account} {
-		h.objects = append(h.objects, &object{
-			button: widget.NewButton(v, func() {
-				h.selectContent(i)
-			}),
-		})
-	}
-	log.Println("home ui init finished")
-	return h
-})()
+var _home =&home{}
 
 type home struct {
 	objects []*object
@@ -41,6 +30,21 @@ func (h *home) selectContent(i int) {
 	h.content.Add(h.objects[h.current].content())
 	h.objects[h.current].button.Importance = widget.HighImportance
 	h.content.Refresh()
+}
+
+func(h *home) run(){
+	for i, v := range []string{constant.Bill, constant.Tally, constant.Account} {
+		h.objects = append(h.objects, &object{
+			button: widget.NewButton(v, func() {
+				h.selectContent(i)
+			}),
+		})
+	}
+
+	_bill.run()
+	_tally.run()
+	_accounts.run()
+	slog.Info("home ui init finished")
 }
 
 func Content() fyne.CanvasObject {
