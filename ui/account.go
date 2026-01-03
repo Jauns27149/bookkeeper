@@ -4,7 +4,10 @@ import (
 	"bookkeeper/constant"
 	"bookkeeper/model"
 	"bookkeeper/service"
+	"fmt"
 	"log"
+	"maps"
+	"slices"
 	"strconv"
 
 	"fyne.io/fyne/v2"
@@ -21,6 +24,7 @@ type account struct {
 	buttons []*widget.Button
 	list    *widget.List
 	detail  *widget.List
+	add     *widget.Button
 }
 
 type mapAcountsObject struct {
@@ -38,7 +42,8 @@ func (a *account) createContent() {
 		grid.Add(b)
 	}
 
-	a.content = container.NewBorder(grid, nil, nil, nil, a.list)
+	buttom := container.NewHBox(layout.NewSpacer(), a.add)
+	a.content = container.NewBorder(grid, buttom, nil, nil, a.list)
 	log.Println("create accounts content finished")
 }
 
@@ -59,10 +64,35 @@ func (a *account) createList() {
 	)
 }
 
-func(a *account) run() {
+func (a *account) createButtom() {
+	a.add = widget.NewButton(constant.AddAccount, func() {
+		var popup *widget.PopUp
+
+		entry := widget.NewEntry()
+		strs := slices.Sorted(maps.Keys(service.GetCondition().Account))
+		prefix := widget.NewSelect(strs, nil)
+		sure := widget.NewButton(constant.Sure, func() {
+			account := fmt.Sprintf("%s:%s", prefix.Selected, entry.Text)
+			service.AddAccount(account)
+			popup.Hide()
+		})
+
+		c := container.NewHBox(prefix, entry, sure)
+
+		popup = widget.NewPopUp(c, currentCanvas())
+		pre := currentCanvas().Size()
+		curr := popup.MinSize()
+		popup.Move(fyne.NewPos(pre.Width/2-curr.Width/2, pre.Width/2-curr.Width/2))
+		popup.Show()
+	})
+
+}
+
+func (a *account) run() {
 	go func() {
 		flag := make(chan struct{})
 		a.createList()
+		a.createButtom()
 
 		data := service.GetAccounts().Accounts
 		for _, item := range data {

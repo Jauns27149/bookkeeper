@@ -10,3 +10,8 @@ run-as com.janus.bookkeeper
 adb exec-out run-as com.janus.bookkeeper cat files/fyne/preferences.json > preferences.json
 ```
 
+
+# x11环境
+```bash
+sudo pacman -S xorg-server xorg-xinit xorg-apps
+```

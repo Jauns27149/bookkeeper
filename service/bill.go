@@ -88,11 +88,12 @@ func Delete(id int) {
 func (b *bill) delete(deal model.Data) {
 	key := deal.Date.Format(constant.OnlyMonth)
 	list := b.pref.StringList(key)
-	for i, item := range list {
-		if row := convert.DataToRow(deal); item == row {
+	data := convert.RowsToDatas(list)
+	for i, item := range data {
+		if item == deal {
 			b.pref.SetStringList(key, append(list[:i], list[i+1:]...))
 			event.LaunchEvent(constant.LoadBill)
-			log.Println("delete item successful, ", row)
+			log.Println("delete item successful, ", deal)
 			break
 		}
 	}
@@ -101,18 +102,18 @@ func (b *bill) delete(deal model.Data) {
 func (b *bill) calculationAggregate() {
 	accountMap := make(map[string]float64)
 	for _, d := range b._data {
-		from := strings.Split(d.From.Name, ":")[0]
-		accountMap[from] = accountMap[from] + d.From.Cost
-		to := strings.Split(d.To.Name, ":")[0]
-		accountMap[to] = accountMap[to] + d.From.Cost
+		accountMap[strings.Split(d.From.Name, ":")[0]] += d.From.Cost
+		accountMap[strings.Split(d.To.Name, ":")[0]] += d.To.Cost
 	}
 
-	income := accountMap[constant.Income]
-	expenses := accountMap[constant.Expenses]
+	income := -accountMap[constant.Income]
+	b.aggregate.Income.Set(strconv.FormatFloat(income, 'f', 2, 64))
 
-	b.aggregate.Income.Set(strconv.FormatFloat(-income, 'f', 2, 64))
+	expenses := accountMap[constant.Expenses]
 	b.aggregate.Expenses.Set(strconv.FormatFloat(expenses, 'f', 2, 64))
-	b.aggregate.Budget.Set(strconv.FormatFloat(-income*0.618+expenses, 'f', 2, 64))
+
+	budget := income*0.618 - expenses
+	b.aggregate.Budget.Set(strconv.FormatFloat(budget, 'f', 2, 64))
 }
 
 func (b *bill) loadData() {

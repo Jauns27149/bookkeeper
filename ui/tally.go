@@ -107,9 +107,9 @@ func (t *tally) createAccount() {
 
 	prefixes := slices.Sorted(maps.Keys(tallyService.Account))
 	t.from.prefix.SetOptions(prefixes)
-	t.from.prefix.SetSelectedIndex(2)
+	t.from.prefix.SetSelected(constant.Liabilities)
 	t.to.prefix.SetOptions(prefixes)
-	t.to.prefix.SetSelectedIndex(4)
+	t.to.prefix.SetSelected(constant.Expenses)
 
 	fn := func(s string, w *widget.Select) {
 		w.SetOptions(tallyService.Account[s])
