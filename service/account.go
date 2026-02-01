@@ -31,7 +31,7 @@ func (a *Accounts) save(account string) {
 	accounts = append(accounts, account)
 	a.pref.SetStringList(constant.Accounts, accounts)
 
-	a.chnageAccount()
+	a.changeAccount()
 }
 
 func (a *Accounts) rename(oldName, newName string) {
@@ -52,18 +52,17 @@ func (a *Accounts) run() {
 	go func() {
 		dataAll := make(map[string]map[string]float64, 5)
 		for _, v := range a.pref.StringList(constant.Accounts) {
-			strs := strings.Split(v, ":")
-			if _, ok := dataAll[strs[0]]; !ok {
-				dataAll[strs[0]] = make(map[string]float64)
+			row := strings.Split(v, ":")
+			if _, ok := dataAll[row[0]]; !ok {
+				dataAll[row[0]] = make(map[string]float64)
 			}
-			dataAll[strs[0]][strs[1]] = 0
-
+			dataAll[row[0]][row[1]] = 0
 		}
 
 		period := accounts.pref.StringList(constant.Period)
 		for _, p := range period {
 			rows := accounts.pref.StringList(p)
-			data := convert.RowsToDatas(rows)
+			data := convert.RowsToData(rows)
 			for _, d := range data {
 				for _, v := range []model.Account{d.From, d.To} {
 					names := strings.Split(v.Name, ":")
@@ -87,13 +86,13 @@ func (a *Accounts) run() {
 		accounts.Accounts = convert.MapToAccounts(dataAll)
 		close(accountsFlag)
 
-		go a.chnageAccount()
+		go a.changeAccount()
 		log.Println("load accounts data finished, size: ", len(accounts.Accounts))
 
 	}()
 }
 
-func (a *Accounts) chnageAccount() {
+func (a *Accounts) changeAccount() {
 	m := _bill.condition.Account
 	for _, v := range a.Accounts {
 		for _, vv := range v.AccountDetail {

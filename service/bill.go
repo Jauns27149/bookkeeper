@@ -39,7 +39,7 @@ func (b *bill) run() {
 
 	b.condition = &model.Condition{}
 	b.condition.Account = map[string][]string{".*": {".*"}}
-	b.condition.Perfix = binding.NewString()
+	b.condition.Prefix = binding.NewString()
 	b.condition.Suffix = binding.NewString()
 	b.condition.Start = time.Date(n.Year(), n.Month(), 1, 0, 0, 0, 0, time.UTC)
 	b.condition.End = n
@@ -61,6 +61,7 @@ func LoadBill() {
 
 func (b *bill) fetchConditionAccount() {
 	accounts := b.pref.StringList(constant.Accounts)
+	log.Println("fetchConditionAccount accounts:", accounts)
 	for _, a := range accounts {
 		v := strings.Split(a, ":")
 		if b.condition.Account[v[0]] == nil {
@@ -69,6 +70,7 @@ func (b *bill) fetchConditionAccount() {
 		b.condition.Account[v[0]] = append(b.condition.Account[v[0]], v[1])
 	}
 
+	log.Println("fetchConditionAccount accounts map:", b.condition.Account)
 	event.LaunchEvent(constant.ConditionPrefixRefresh, constant.ConditionSuffixRefresh)
 	log.Println("fetch condition account finished")
 }
@@ -88,7 +90,7 @@ func Delete(id int) {
 func (b *bill) delete(deal model.Data) {
 	key := deal.Date.Format(constant.OnlyMonth)
 	list := b.pref.StringList(key)
-	data := convert.RowsToDatas(list)
+	data := convert.RowsToData(list)
 	for i, item := range data {
 		if item == deal {
 			b.pref.SetStringList(key, append(list[:i], list[i+1:]...))
@@ -118,13 +120,13 @@ func (b *bill) calculationAggregate() {
 
 func (b *bill) loadData() {
 	t := b.condition.Start
-	perfix, _ := b.condition.Perfix.Get()
+	perfix, _ := b.condition.Prefix.Get()
 	suffix, _ := b.condition.Suffix.Get()
 
 	b._data = []model.Data{}
 	for !t.After(b.condition.End) {
 		d := b.pref.StringList(t.Format("2006-01"))
-		_data := convert.RowsToDatas(d)
+		_data := convert.RowsToData(d)
 		_data = slices.DeleteFunc(_data, func(data model.Data) bool {
 			return !regexp.MustCompile(perfix+suffix).MatchString(data.From.Name+data.To.Name) ||
 				data.Date.Before(b.condition.Start) || data.Date.After(b.condition.End)

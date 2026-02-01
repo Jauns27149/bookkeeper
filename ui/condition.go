@@ -19,16 +19,16 @@ var _condition = &condition{}
 type condition struct {
 	content fyne.CanvasObject
 
-	perfix *widget.Select
+	prefix *widget.Select
 	suffix *widget.Select
 	start  *widget.DateEntry
 	end    *widget.DateEntry
 	sure   *widget.Button
 }
 
-func getconditionContent() fyne.CanvasObject {
+func getConditionContent() fyne.CanvasObject {
 	_condition.createAccount()
-	_condition.createtime()
+	_condition.createTime()
 
 	_condition.sure = widget.NewButton(constant.Sure, func() {
 		event.LaunchEvent(constant.LoadBill)
@@ -36,14 +36,14 @@ func getconditionContent() fyne.CanvasObject {
 	_condition.sure.Importance = widget.HighImportance
 
 	_condition.content = container.NewVBox(
-		container.NewBorder(nil, nil, container.NewHBox(_condition.perfix, _condition.suffix), _condition.sure),
+		container.NewBorder(nil, nil, container.NewHBox(_condition.prefix, _condition.suffix), _condition.sure),
 		container.NewGridWithColumns(2, _condition.start, _condition.end),
 	)
 
 	return _condition.content
 }
 
-func (c *condition) createtime() {
+func (c *condition) createTime() {
 	condition := service.GetCondition()
 
 	c.start = widget.NewDateEntry()
@@ -61,20 +61,22 @@ func (c *condition) createtime() {
 
 func (c *condition) createAccount() {
 	condition := service.GetCondition()
-	c.perfix = widget.NewSelectWithData([]string{}, condition.Perfix)
-	c.suffix = widget.NewSelectWithData([]string{}, condition.Perfix)
-	c.perfix.Selected = ".*"
+	c.prefix = widget.NewSelectWithData([]string{}, condition.Prefix)
+	c.suffix = widget.NewSelectWithData([]string{}, condition.Prefix)
+	c.prefix.Selected = ".*"
 	c.suffix.Selected = ".*"
 
 	event.SetEventFunc(constant.ConditionPrefixRefresh, func() {
 		accounts := service.GetCondition().Account
-		c.perfix.Options = slices.Sorted(maps.Keys(accounts))
+		c.prefix.Options = slices.Compact(slices.Sorted(maps.Keys(accounts)))
 	})
 	event.SetEventFunc(constant.ConditionSuffixRefresh, func() {
-		c.suffix.Options = service.GetCondition().Account[c.perfix.Selected]
+		values := service.GetCondition().Account[c.prefix.Selected]
+		slices.Sort(values)
+		c.suffix.Options = slices.Compact(values)
 	})
 
-	condition.Perfix.AddListener(binding.NewDataListener(func() {
+	condition.Prefix.AddListener(binding.NewDataListener(func() {
 		event.LaunchEvent(constant.ConditionSuffixRefresh)
 	}))
 }

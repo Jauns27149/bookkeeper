@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-func RowsToDatas(rows []string) (_data []model.Data) {
+func RowsToData(rows []string) (_data []model.Data) {
 	for _, row := range rows {
 		d := strings.Split(strings.TrimSpace(row), ",")
 		if len(d) != 9 {
@@ -21,7 +21,7 @@ func RowsToDatas(rows []string) (_data []model.Data) {
 		payA, _ := strconv.ParseFloat(d[4], 64)
 		payB, _ := strconv.ParseFloat(d[7], 64)
 
-		statment := model.Data{
+		statement := model.Data{
 			Date:     date,
 			Terminal: d[1],
 			Usage:    d[2],
@@ -29,10 +29,10 @@ func RowsToDatas(rows []string) (_data []model.Data) {
 			To:       model.Account{Name: d[6], Cost: payB, Kind: d[8]},
 		}
 		if payA > 0 {
-			statment.From, statment.To = statment.To, statment.From
+			statement.From, statement.To = statement.To, statement.From
 		}
 
-		_data = append(_data, statment)
+		_data = append(_data, statement)
 	}
 
 	return _data

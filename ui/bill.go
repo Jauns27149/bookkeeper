@@ -15,7 +15,8 @@ type bill struct {
 	aggregate fyne.CanvasObject
 	condition fyne.CanvasObject
 	statement *widget.List
-	content   fyne.CanvasObject
+
+	content fyne.CanvasObject
 }
 
 func (b *bill) run() {
@@ -23,7 +24,7 @@ func (b *bill) run() {
 
 	b.statement = createStatementList()
 	b.aggregate = _aggregate.content
-	b.condition = getconditionContent()
+	b.condition = getConditionContent()
 	b.content = container.NewBorder(
 		container.NewVBox(_bill.aggregate, _bill.condition),
 		nil, nil, nil, _bill.statement)
@@ -35,6 +36,4 @@ func (b *bill) run() {
 	event.SetEventFunc(constant.BillRefresh, func() {
 		b.content.Refresh()
 	})
-
-
 }

@@ -14,7 +14,7 @@ type Aggregate struct {
 
 type Condition struct {
 	Account map[string][]string
-	Perfix  binding.String
+	Prefix  binding.String
 	Suffix  binding.String
 	Start   time.Time
 	End     time.Time
