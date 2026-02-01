@@ -34,17 +34,27 @@ func (a *Accounts) save(account string) {
 	a.changeAccount()
 }
 
-func (a *Accounts) rename(oldName, newName string) {
+func (a *Accounts) Rename(oldName, newName string) {
+	list := a.pref.StringList(constant.Accounts)
+	for i, account := range list {
+		if strings.Contains(account, oldName) {
+			list[i] = strings.ReplaceAll(account, oldName, newName)
+		}
+	}
+	a.pref.SetStringList(constant.Accounts, list)
+
 	period := a.pref.StringList(constant.Period)
 	for _, p := range period {
 		rows := a.pref.StringList(p)
-		for _, row := range rows {
+		for i, row := range rows {
 			if strings.Contains(row, oldName) {
-				strings.ReplaceAll(row, oldName, newName)
+				rows[i] = strings.ReplaceAll(row, oldName, newName)
 			}
 		}
 		a.pref.SetStringList(p, rows)
 	}
+
+	log.Printf("rename finished,%v-->%v\n", oldName, newName)
 }
 
 func (a *Accounts) run() {
